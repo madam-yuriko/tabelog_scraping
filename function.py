@@ -1,6 +1,7 @@
 import const
 import re
 import time
+from const import MAX_ROW_CNT
 
 
 def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', heiten=False, kuchikomi_sort=False, award='', meiten='', special=''):
@@ -54,7 +55,7 @@ def insert_tree(tree, df_target):
     for i in tree.get_children():
         tree.delete(i)
     # 再描画
-    df_target = df_target.iloc[0:200]
+    df_target = df_target.iloc[0:MAX_ROW_CNT]
     for i, row in enumerate(df_target.itertuples()):
         # 一覧に入力
         award_str = ''

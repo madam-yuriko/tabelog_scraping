@@ -110,13 +110,19 @@ class MouseApp(tk.Frame):
 
         # ツリー
         self.tree = ttk.Treeview(self)
-        self.tree['height'] = const.ROW_COUNT
+        self.tree['height'] = const.VIEW_ROW_CNT
         self.tree["column"] = list(const.DATA_FLAME_LAYOUT.keys())
         self.tree["show"] = "headings"
         [self.tree.heading(k, text=k) for k in const.DATA_FLAME_LAYOUT.keys()]
         [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
         self.tree.bind("<Double-1>", self.hyper_link)
         self.tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_select(event))
+
+        # スクロールバー
+        scroll = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
+        scroll.pack(side=tk.RIGHT, fill="y")
+        self.tree.pack()
+        self.tree["yscrollcommand"] = scroll.set
 
         # ウィジェット配置
         self.widget()

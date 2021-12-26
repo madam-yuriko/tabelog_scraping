@@ -2,7 +2,8 @@ import tkinter as tk
 
 DATA_BASE = 'data_base_all.csv'
 
-ROW_COUNT = 50
+VIEW_ROW_CNT = 50
+MAX_ROW_CNT = 500
 
 SELECTOR_DIC = {
     'ID': None,
