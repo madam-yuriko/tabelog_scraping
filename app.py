@@ -38,7 +38,7 @@ class MouseApp(tk.Frame):
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'area'))
         self.lbl_area = tk.Label(self, text='地方')
-        self.cmb_area = ttk.Combobox(self, width=20, height=50, textvariable=sv, values=list(const.AREA_LIST.keys()))
+        self.cmb_area = ttk.Combobox(self, width=20, height=50, textvariable=sv, values=list(const.AREA_DICT.keys()))
 
         # 都道府県
         sv = tk.StringVar()
@@ -102,6 +102,12 @@ class MouseApp(tk.Frame):
         self.lbl_meiten = tk.Label(self, text='百名店')
         self.cmb_meiten = ttk.Combobox(self, width=20, textvariable=sv, height=30, values=const.MEITEN_LIST)
 
+        # 商業施設
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
+        self.lbl_shisetsu = tk.Label(self, text='商業施設')
+        self.cmb_shisetsu = ttk.Combobox(self, width=20, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
+
         # その他条件
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df))
@@ -143,11 +149,11 @@ class MouseApp(tk.Frame):
         no = int(self.tree.set(select)['No']) - 1
         self.link = self.df_target.iloc[no].URL
 
-    def on_text_changed(self, df_all, reset=''):
-        print(reset)
-        if reset == 'area' and self.cmb_area.get() != '':
+    def on_text_changed(self, df_all, name=''):
+        print(name)
+        if name == 'area' and self.cmb_area.get() != '':
             self.cmb_tdfkn.set('')
-        elif reset == 'tdfkn' and self.cmb_tdfkn.get() != '':
+        elif name == 'tdfkn' and self.cmb_tdfkn.get() != '':
             self.cmb_area.set('')
         self.reload(df_all)
 
@@ -170,9 +176,17 @@ class MouseApp(tk.Frame):
 
     def reload(self, df_all):
         print('reload')
+        shisetsu = const.SHISETSU_DICT[self.cmb_shisetsu.get()]
+        for k, v in shisetsu.items():
+            if k == '場所1':
+                self.txt_place_1.delete(0, tk.END)
+                self.txt_place_1.insert(tk.END, v)
+            elif k == '場所2':
+                self.txt_place_2.delete(0, tk.END)
+                self.txt_place_2.insert(tk.END, v)
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
-        shop_name = self.txt_shop_name.get()
+        shop_name = self.txt_shop_name.get().replace(' ', '')
         genre = self.cmb_genre.get()
         only_genre1 = self.bv1.get()
         yosan_night_l = self.cmb_yosan_night_l.get()
@@ -195,7 +209,7 @@ class MouseApp(tk.Frame):
         self.df_target = func.processing_data_frame(
             df_all, area, tdfkn, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, heiten, kuchikomi_sort, award, meiten, special)[header_list]
-        self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
+        self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
         func.insert_tree(self.tree, self.df_target)
 
     def widget(self):
@@ -227,7 +241,9 @@ class MouseApp(tk.Frame):
         self.cmb_award.pack(side=tk.LEFT, after=self.lbl_award, anchor=tk.W, padx=5, pady=5)
         self.lbl_meiten.pack(side=tk.LEFT, after=self.cmb_award, anchor=tk.W, padx=5, pady=5)
         self.cmb_meiten.pack(side=tk.LEFT, after=self.lbl_meiten, anchor=tk.W, padx=5, pady=5)
-        self.lbl_special.pack(side=tk.LEFT, after=self.cmb_meiten, anchor=tk.W, padx=5, pady=5)
+        self.lbl_shisetsu.pack(side=tk.LEFT, after=self.cmb_meiten, anchor=tk.W, padx=5, pady=5)
+        self.cmb_shisetsu.pack(side=tk.LEFT, after=self.lbl_shisetsu, anchor=tk.W, padx=5, pady=5)
+        self.lbl_special.pack(side=tk.LEFT, after=self.cmb_shisetsu, anchor=tk.W, padx=5, pady=5)
         self.cmb_special.pack(side=tk.LEFT, after=self.lbl_special, anchor=tk.W, padx=5, pady=5)
                  
 # アプリの実行

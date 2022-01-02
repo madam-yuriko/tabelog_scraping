@@ -7,11 +7,11 @@ from const import MAX_ROW_CNT
 def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', heiten=False, kuchikomi_sort=False, award='', meiten='', special=''):
     start_time = time.time()
     if area:
-        df = df[df.都道府県.str.contains(const.AREA_LIST[area])]
+        df = df[df.都道府県.str.contains(const.AREA_DICT[area])]
     if tdfkn:
         df = df[df.都道府県.str.contains(tdfkn)]
     if shop_name:
-        df = df[df.店名.str.lower().str.contains(shop_name.lower())]
+        df = df[df.店名.str.lower().str.replace(' ', '').str.contains(shop_name.lower().replace(' ', ''))]
     if genre:
         df = df[df.ジャンル1.str.contains(genre) | df.ジャンル2.str.contains(genre) | df.ジャンル3.str.contains(genre)]
     if only_genre1:
