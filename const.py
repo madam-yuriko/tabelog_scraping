@@ -22,6 +22,7 @@ SELECTOR_DIC = {
     '保存件数': ['span', 'rdheader-rating__hozon-target'],
     '説明': ['h3', 'pr-comment-title'],
     '説明詳細': ['span', 'pr-comment__first'],
+    '予約可否': ['p', 'rstinfo-table__reserve-status'],
     '予算(夜)': 0,
     '予算(昼)': 1,
     'ジャンル1': '#rstdtl-head > div.rstdtl-header > section > div.rdheader-info-data > div > div > div:nth-child(1) > dl:nth-child(3) > dd > div:nth-child(1) > div.linktree__parent > a > span',
@@ -44,6 +45,8 @@ DATA_FLAME_LAYOUT = {
 SHISETSU_DICT = {
     '': {},
     '渋谷ストリーム': {'場所1': '渋谷3-21-3'},
+    '渋谷スクランブルスクエア': {'場所1': '渋谷2-24-12', '場所2': '12F|13F'},
+    'TOKYO TORCH 常盤橋タワー': {'場所1': '大手町2-6-4'},
     '札幌 miredo': {'場所1': '札幌', '場所2': '大同生命'},
 }
 
@@ -68,6 +71,14 @@ TODOFUKEN_LIST = [
     '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県', '愛媛県', '高知県',
     '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
 ]
+
+TODOFUKEN_URL_LIST = {
+    '01': 'hokkaido', '02': 'aomori', '03': 'iwate', '04': 'miyagi', '05': 'akita', '06': 'yamagata', '07': 'fukushima', '08': 'ibaraki', '09': 'tochigi', '10': 'gunma',
+    '11': 'saitama', '12': 'chiba', '13': 'tokyo', '14': 'kanagawa', '15': 'niigata', '16': 'toyama', '17': 'ishikawa', '18': 'fukui', '19': 'yamanashi', '20': 'nagano',
+    '21': 'gifu', '22': 'shizuoka', '23': 'aichi', '24': 'mie', '25': 'shiga', '26': 'kyoto', '27': 'osaka', '28': 'hyogo', '29': 'nara', '30': 'wakayama',
+    '31': 'tottori', '32': 'shimane', '33': 'oakayama', '34': 'hiroshima', '35': 'yamaguchi', '36': 'tokushima', '37': 'kagawa', '38': 'ehime', '39': 'kochi', '40': 'fukuoka',
+    '41': 'saga', '42': 'nagasaki', '43': 'kumamoto', '44': 'oita', '45': 'miyazaki', '46': 'kagoshima', '47': 'okinawa',
+}
 
 # ジャンル一覧
 GENRE_LIST = [

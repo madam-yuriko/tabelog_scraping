@@ -177,13 +177,15 @@ class MouseApp(tk.Frame):
     def reload(self, df_all):
         print('reload')
         shisetsu = const.SHISETSU_DICT[self.cmb_shisetsu.get()]
-        for k, v in shisetsu.items():
-            if k == '場所1':
-                self.txt_place_1.delete(0, tk.END)
-                self.txt_place_1.insert(tk.END, v)
-            elif k == '場所2':
-                self.txt_place_2.delete(0, tk.END)
-                self.txt_place_2.insert(tk.END, v)
+        if shisetsu:
+            self.txt_shop_name.delete(0, tk.END)
+            for k, v in shisetsu.items():
+                if k == '場所1':
+                    self.txt_place_1.delete(0, tk.END)
+                    self.txt_place_1.insert(tk.END, v)
+                elif k == '場所2':
+                    self.txt_place_2.delete(0, tk.END)
+                    self.txt_place_2.insert(tk.END, v)
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
         shop_name = self.txt_shop_name.get().replace(' ', '')
