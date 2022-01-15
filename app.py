@@ -34,6 +34,9 @@ class MouseApp(tk.Frame):
         df_all = pd.read_csv(const.DATA_BASE, encoding='utf-8', low_memory=False).fillna('')
         df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST[x])
 
+        # ジャンル抽出
+        const.GENRE_LIST = sorted(list(set(list(df_all['ジャンル1']) + list(df_all['ジャンル2']) + list(df_all['ジャンル3']))))
+
         # 地域
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'area'))
@@ -104,7 +107,7 @@ class MouseApp(tk.Frame):
 
         # 商業施設
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'shisetsu'))
         self.lbl_shisetsu = tk.Label(self, text='商業施設')
         self.cmb_shisetsu = ttk.Combobox(self, width=20, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
 
@@ -145,9 +148,10 @@ class MouseApp(tk.Frame):
         webbrowser.open(self.link)
 
     def on_tree_select(self, event):
-        select = self.tree.selection()[0]
-        no = int(self.tree.set(select)['No']) - 1
-        self.link = self.df_target.iloc[no].URL
+        if len(self.tree.selection()) != 0:
+            select = self.tree.selection()[0]
+            no = int(self.tree.set(select)['No']) - 1
+            self.link = self.df_target.iloc[no].URL
 
     def on_text_changed(self, df_all, name=''):
         print(name)
@@ -155,12 +159,20 @@ class MouseApp(tk.Frame):
             self.cmb_tdfkn.set('')
         elif name == 'tdfkn' and self.cmb_tdfkn.get() != '':
             self.cmb_area.set('')
+        elif name == 'shisetsu':
+            if self.cmb_shisetsu.get() == '':
+                self.all_reset(df_all)
+            else:
+                self.txt_place_1.delete(0, tk.END)
+                self.txt_place_2.delete(0, tk.END)
+                self.txt_place_3.delete(0, tk.END)
         self.reload(df_all)
 
     def on_enter(self, df_all):
         self.reload(df_all)
 
-    def on_special_enter(self, df_all):
+    def all_reset(self, df_all):
+        print('all_reset()')
         self.cmb_area.set('')
         self.cmb_tdfkn.set('')
         self.txt_shop_name.delete(0, tk.END)
@@ -172,7 +184,6 @@ class MouseApp(tk.Frame):
         self.txt_place_3.delete(0, tk.END)
         self.cmb_award.set('')
         self.cmb_meiten.set('')
-        self.reload(df_all)
 
     def reload(self, df_all):
         print('reload')
@@ -186,6 +197,9 @@ class MouseApp(tk.Frame):
                 elif k == '場所2':
                     self.txt_place_2.delete(0, tk.END)
                     self.txt_place_2.insert(tk.END, v)
+                elif k == '場所3':
+                    self.txt_place_3.delete(0, tk.END)
+                    self.txt_place_3.insert(tk.END, v)
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
         shop_name = self.txt_shop_name.get().replace(' ', '')
