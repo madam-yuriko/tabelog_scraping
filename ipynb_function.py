@@ -9,13 +9,6 @@ import pandas as pd
 
 
 def scraping(response, t_id, url):
-    if response.status_code == 200:
-        failed_cnt = 0
-        print(f'load:{url} success!:{response.status_code}')
-    else:
-        print(f'load:{url} failed:{response.status_code}')
-        failed_cnt += 1
-        return
     df = pd.DataFrame()
     soup = BeautifulSoup(response.text, "html.parser")
     for key, selector in const.SELECTOR_DIC.items():
