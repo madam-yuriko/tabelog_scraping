@@ -166,6 +166,19 @@ class MouseApp(tk.Frame):
                 self.txt_place_1.delete(0, tk.END)
                 self.txt_place_2.delete(0, tk.END)
                 self.txt_place_3.delete(0, tk.END)
+                shisetsu = const.SHISETSU_DICT[self.cmb_shisetsu.get()]
+                if shisetsu:
+                    self.txt_shop_name.delete(0, tk.END)
+                    for k, v in shisetsu.items():
+                        if k == '場所1':
+                            self.txt_place_1.delete(0, tk.END)
+                            self.txt_place_1.insert(tk.END, v)
+                        elif k == '場所2':
+                            self.txt_place_2.delete(0, tk.END)
+                            self.txt_place_2.insert(tk.END, v)
+                        elif k == '場所3':
+                            self.txt_place_3.delete(0, tk.END)
+                            self.txt_place_3.insert(tk.END, v)
         self.reload(df_all)
 
     def on_enter(self, df_all):
@@ -187,19 +200,6 @@ class MouseApp(tk.Frame):
 
     def reload(self, df_all):
         print('reload')
-        shisetsu = const.SHISETSU_DICT[self.cmb_shisetsu.get()]
-        if shisetsu:
-            self.txt_shop_name.delete(0, tk.END)
-            for k, v in shisetsu.items():
-                if k == '場所1':
-                    self.txt_place_1.delete(0, tk.END)
-                    self.txt_place_1.insert(tk.END, v)
-                elif k == '場所2':
-                    self.txt_place_2.delete(0, tk.END)
-                    self.txt_place_2.insert(tk.END, v)
-                elif k == '場所3':
-                    self.txt_place_3.delete(0, tk.END)
-                    self.txt_place_3.insert(tk.END, v)
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
         shop_name = self.txt_shop_name.get().replace(' ', '')

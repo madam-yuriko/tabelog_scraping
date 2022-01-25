@@ -74,7 +74,7 @@ def insert_tree(tree, df_target):
             meiten_str += meiten[-2:] + '/'
         row[10] = meiten_str[0:-2]
         tree.insert("", "end", tags=i, values=[i+1] + list(row[1:len(const.DATA_FLAME_LAYOUT)+1]))
-        if row[2] in ['閉店', '移転', '休業', '掲載保留']:
+        if row[3] in ['閉店', '移転', '休業', '掲載保留']:
             tree.tag_configure(i, background="#cccccc")
         elif i % 2 == 0:
             tree.tag_configure(i, background="#ffffff")
