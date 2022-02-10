@@ -34,6 +34,9 @@ class MouseApp(tk.Frame):
         df_all = pd.read_csv(const.DATA_BASE, encoding='utf-8', low_memory=False).fillna('')
         df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST[x])
 
+        # 県別店数カウント
+        # print(df_all[df_all['ステータス'] == '']['都道府県'].value_counts())
+
         # ジャンル抽出
         const.GENRE_LIST = sorted(list(set(list(df_all['ジャンル1']) + list(df_all['ジャンル2']) + list(df_all['ジャンル3']))))
 

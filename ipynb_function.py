@@ -4,11 +4,12 @@ import datetime
 import re
 import sys
 import jaconv
-import time
 import pandas as pd
+import fasteners
+import pickle
 
 
-def scraping(response, t_id, url):
+def extraction(response, store_id, url):
     df = pd.DataFrame()
     soup = BeautifulSoup(response.text, "html.parser")
     for key, selector in const.SELECTOR_DIC.items():
@@ -74,9 +75,41 @@ def scraping(response, t_id, url):
             if key not in ['取得日時']:
                 value = jaconv.z2h(value, kana=False, digit=True, ascii=True).replace('~', '～').replace(',', '').replace('\n', '').strip()
 
-            df.loc[t_id, key] = value
+            df.loc[store_id, key] = value
         except Exception:
             # print(key, sys.exc_info())
-            df.loc[t_id, key] = ''
+            df.loc[store_id, key] = ''
             continue
+    write_csv(df)
+
+
+def preprocessing(year):
+    # 全ての店舗ID
+    all_id_list = []
+    df = pd.read_csv(f'store_count_{year}.csv', header=None)
+    for i in df.itertuples():
+        all_id_list += range(i[1]*1000000, i[2])
+    current_id_set = set([str(j).zfill(8) for j in all_id_list])
+    print(f'All store id count: {len(all_id_list)}')
+    
+    # 出力済みの店舗ID
+    df = pd.read_csv('data_base_all.csv', usecols=['ID'], dtype = {'ID': str}, encoding='utf-8', low_memory=False)
+    exist_id_set = set(df['ID'].tolist())
+    print(f'Exist store id count: {len(exist_id_set)}')
+    return list(current_id_set - exist_id_set)
+    
+
+@fasteners.interprocess_locked(f'lock_file_c')
+def write_csv(df):
     df.to_csv(f'data_base_all.csv', mode='a', header=None)
+
+
+@fasteners.interprocess_locked(f'lock_file_p')
+def dump_pickle(year, store_id):
+    with open(f'store_ids_{year}.binaryfile', mode='rb') as f:
+        current_id_list = pickle.load(f)
+
+    current_id_list.remove(store_id)
+    with open(f'store_ids_{year}.binaryfile', mode='wb') as f:
+        pickle.dump(current_id_list , f)
+    
