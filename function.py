@@ -70,7 +70,7 @@ def insert_tree(tree, df_target):
         row[11] = award_str[0:-2]
         # 百名店書き換え
         meiten_str = re.sub(r'\d', '', row[12].split('/')[0]) + ' '
-        for meiten in row[10].split('/'):
+        for meiten in row[12].split('/'):
             meiten_str += meiten[-2:] + '/'
         row[12] = meiten_str[0:-2]
         tree.insert("", "end", tags=i, values=[i+1] + list(row[1:len(const.DATA_FLAME_LAYOUT)+1]))

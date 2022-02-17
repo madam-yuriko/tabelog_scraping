@@ -32,8 +32,8 @@ class MouseApp(tk.Frame):
 
         # 列加工
         def score_zougen(x):
-            x = float(f'{x:.2f}')
-            return f'+{x}' if x > 0 else str(x)
+            x = f'{x:.2f}'
+            return f'+{x}' if float(x) > 0 else x
 
         def kutchikomi_zougen(x):
             return f'+{x}' if x > 0 else str(x)
