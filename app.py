@@ -30,9 +30,24 @@ class MouseApp(tk.Frame):
                         foreground='#ffffff',
                         background='#0000aa')
 
+        # 列加工
+        def score_zougen(x):
+            x = float(f'{x:.2f}')
+            return f'+{x}' if x > 0 else str(x)
+
+        def kutchikomi_zougen(x):
+            return f'+{x}' if x > 0 else str(x)
+
         # データフレーム取得
-        df_all = pd.read_csv(const.DATA_BASE, encoding='utf-8', low_memory=False).fillna('')
+        df_all = pd.read_csv(const.get_csv_name(const.YEAR), encoding='utf-8', low_memory=False).fillna('')
         df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST[x])
+        df_last_year = pd.read_csv(const.get_csv_name(const.YEAR - 1), usecols=['ID', '点数', '口コミ数'], encoding='utf-8', low_memory=False).fillna('')
+        df_all = pd.merge(df_all, df_last_year, on='ID', how='left', indicator=True)
+        df_all.columns = const.MERGE_COL_NAMES
+        df_all['点数(増減)'] = (df_all['点数'] - df_all['点数(昨年)'].fillna(0))
+        df_all['点数(増減)'] = df_all['点数(増減)'].apply(lambda x: score_zougen(x))
+        df_all['口コミ数(増減)'] = (df_all['口コミ数'] - df_all['口コミ数(昨年)'].fillna(0)).astype(int)
+        df_all['口コミ数(増減)'] = df_all['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
 
         # 県別店数カウント
         # print(df_all[df_all['ステータス'] == '']['都道府県'].value_counts())
@@ -223,7 +238,7 @@ class MouseApp(tk.Frame):
         if tdfkn not in const.TODOFUKEN_LIST:
             return
         print(f'{area} {tdfkn} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {heiten} {kuchikomi_sort} {award} {meiten} {special}')
-        header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']
+        header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
         self.df_target = func.processing_data_frame(
             df_all, area, tdfkn, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 

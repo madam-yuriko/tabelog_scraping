@@ -65,18 +65,25 @@ def insert_tree(tree, df_target):
         award_str = ''
         row = list(row)
         # 食べログアワード書き換え
-        for award in row[9].split('/'):
+        for award in row[11].split('/'):
             award_str += award[2:6].replace(' ', '') + '/'
-        row[9] = award_str[0:-2]
+        row[11] = award_str[0:-2]
         # 百名店書き換え
-        meiten_str = re.sub(r'\d', '', row[10].split('/')[0]) + ' '
+        meiten_str = re.sub(r'\d', '', row[12].split('/')[0]) + ' '
         for meiten in row[10].split('/'):
             meiten_str += meiten[-2:] + '/'
-        row[10] = meiten_str[0:-2]
+        row[12] = meiten_str[0:-2]
         tree.insert("", "end", tags=i, values=[i+1] + list(row[1:len(const.DATA_FLAME_LAYOUT)+1]))
+        
+        # バックグラウンドカラー変更
+        # 閉店他
         if row[3] in ['閉店', '移転', '休業', '掲載保留']:
             tree.tag_configure(i, background="#cccccc")
         elif i % 2 == 0:
             tree.tag_configure(i, background="#ffffff")
         elif i % 2 == 1:
             tree.tag_configure(i, background="#d6f3ff")
+        # 新店
+        if row[24] == 'left_only':
+            tree.tag_configure(i, background="#f0e68c")
+
