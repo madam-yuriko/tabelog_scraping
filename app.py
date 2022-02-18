@@ -12,6 +12,7 @@ class MouseApp(tk.Frame):
     # 初期化
     def __init__(self, master=None):
         self.link = ''
+        self.df_small = None
 
         # ★バグ対応用の関数を追加
         def fixed_map(option):
@@ -31,9 +32,17 @@ class MouseApp(tk.Frame):
                         background='#0000aa')
 
         # 列加工
+        def score(x):
+            return f'{x:.2f}'
+
         def score_zougen(x):
-            x = f'{x:.2f}'
-            return f'+{x}' if float(x) > 0 else x
+            # x = f'{x:.2f}'
+            if x >= 1.00:
+                return '-'
+            elif x > 0:
+                return f'+{x:.2f}'
+            else:
+                return f'{x:.2f}'
 
         def kutchikomi_zougen(x):
             return f'+{x}' if x > 0 else str(x)
@@ -46,8 +55,10 @@ class MouseApp(tk.Frame):
         df_all.columns = const.MERGE_COL_NAMES
         df_all['点数(増減)'] = (df_all['点数'] - df_all['点数(昨年)'].fillna(0))
         df_all['点数(増減)'] = df_all['点数(増減)'].apply(lambda x: score_zougen(x))
+        df_all['点数'] = df_all['点数'].apply(lambda x: score(x))
         df_all['口コミ数(増減)'] = (df_all['口コミ数'] - df_all['口コミ数(昨年)'].fillna(0)).astype(int)
         df_all['口コミ数(増減)'] = df_all['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
+        self.df_small = df_all
 
         # 県別店数カウント
         # print(df_all[df_all['ステータス'] == '']['都道府県'].value_counts())
@@ -70,12 +81,12 @@ class MouseApp(tk.Frame):
         # 店名
         self.lbl_shop_name = tk.Label(self, text='店名')
         self.txt_shop_name = tk.Entry(self, width=20)
-        self.txt_shop_name.bind('<Return>', lambda event, df=df_all: self.on_enter(df))
+        self.txt_shop_name.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
         # ジャンル
         self.lbl_genre = tk.Label(self, text='ジャンル')
         self.cmb_genre = ttk.Combobox(self, width=20, height=40, values=const.GENRE_LIST)
-        self.cmb_genre.bind('<Return>', lambda event, df=df_all: self.on_enter(df))
+        self.cmb_genre.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
         # ジャンル1のみ
         self.bv1 = tk.BooleanVar()
@@ -85,21 +96,21 @@ class MouseApp(tk.Frame):
         # 予算(夜)
         self.lbl_yosan_night_l = tk.Label(self, text='予算(夜) 下限')
         self.cmb_yosan_night_l = ttk.Combobox(self, width=10, height=30, values=const.YOSAN_LIST_L)
-        self.cmb_yosan_night_l.bind('<Return>', lambda event, df=df_all: self.on_enter(df))
+        self.cmb_yosan_night_l.bind('<Return>', lambda event, df=df_all: self.on_enter())
         self.lbl_yosan_night_h = tk.Label(self, text='上限')
         self.cmb_yosan_night_h = ttk.Combobox(self, width=10, height=30, values=const.YOSAN_LIST_H)
-        self.cmb_yosan_night_h.bind('<Return>', lambda event, df=df_all: self.on_enter(df))
+        self.cmb_yosan_night_h.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
         # 所在地、施設名、最寄り駅
         self.lbl_place_1 = tk.Label(self, text='場所1')
         self.txt_place_1 = tk.Entry(self, width=20)
-        self.txt_place_1.bind('<Return>', lambda event, df=df_all: self.on_enter(df))
+        self.txt_place_1.bind('<Return>', lambda event, df=df_all: self.on_enter())
         self.lbl_place_2 = tk.Label(self, text='場所2')
         self.txt_place_2 = tk.Entry(self, width=20)
-        self.txt_place_2.bind('<Return>', lambda event, df=df_all: self.on_enter(df))
+        self.txt_place_2.bind('<Return>', lambda event, df=df_all: self.on_enter())
         self.lbl_place_3 = tk.Label(self, text='場所3')
         self.txt_place_3 = tk.Entry(self, width=20)
-        self.txt_place_3.bind('<Return>', lambda event, df=df_all: self.on_enter(df))
+        self.txt_place_3.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
         # 閉店・移転
         self.bv2 = tk.BooleanVar()
@@ -159,7 +170,7 @@ class MouseApp(tk.Frame):
         style.map('Treeview', foreground=fixed_map('foreground'), background=fixed_map('background'))
         style.configure("Treeview", font=("Arial", 11, 'bold'), rowheight=28)
 
-        self.reload(df_all)
+        self.reload()
 
 
     def hyper_link(self, event):
@@ -173,39 +184,55 @@ class MouseApp(tk.Frame):
 
     def on_text_changed(self, df_all, name=''):
         print(name)
-        if name == 'area' and self.cmb_area.get() != '':
-            self.cmb_tdfkn.set('')
-        elif name == 'tdfkn' and self.cmb_tdfkn.get() != '':
-            self.cmb_area.set('')
+        if name == 'area':
+            # df_allを削減して高速化
+            area = self.cmb_area.get()
+            tdfkn = self.cmb_tdfkn.get()
+            if area == '' and tdfkn == '':
+                self.df_small = df_all
+            elif area != '' and tdfken =='':
+                self.df_small = df_all[df_all.都道府県.str.contains(const.AREA_DICT[area])]
+
+            if area != '':
+                self.cmb_tdfkn.set('')
+        elif name == 'tdfkn':
+            # df_allを削減して高速化
+            area = self.cmb_area.get()
+            tdfkn = self.cmb_tdfkn.get()
+            if area == '' and tdfkn == '':
+                self.df_small = df_all
+            elif tdfkn != '' and area =='':
+                self.df_small = df_all[df_all.都道府県.str.contains(tdfkn)]
+
+            if tdfkn != '':
+                self.cmb_area.set('')
         elif name == 'shisetsu':
             if self.cmb_shisetsu.get() == '':
-                self.all_reset(df_all)
+                self.all_reset()
             else:
                 self.txt_place_1.delete(0, tk.END)
                 self.txt_place_2.delete(0, tk.END)
                 self.txt_place_3.delete(0, tk.END)
+                self.txt_shop_name.delete(0, tk.END)
                 shisetsu = const.SHISETSU_DICT[self.cmb_shisetsu.get()]
-                if shisetsu:
-                    self.txt_shop_name.delete(0, tk.END)
-                    for k, v in shisetsu.items():
-                        if k == '場所1':
-                            self.txt_place_1.delete(0, tk.END)
-                            self.txt_place_1.insert(tk.END, v)
-                        elif k == '場所2':
-                            self.txt_place_2.delete(0, tk.END)
-                            self.txt_place_2.insert(tk.END, v)
-                        elif k == '場所3':
-                            self.txt_place_3.delete(0, tk.END)
-                            self.txt_place_3.insert(tk.END, v)
-        self.reload(df_all)
+                for k, v in shisetsu.items():
+                    if k == '都道府県':
+                        tdfkn = self.cmb_tdfkn.get()
+                        if tdfkn != v:
+                            self.cmb_tdfkn.set(v)
+                    elif k == '場所1':
+                        self.txt_place_1.insert(tk.END, v)
+                    elif k == '場所2':
+                        self.txt_place_2.insert(tk.END, v)
+                    elif k == '場所3':
+                        self.txt_place_3.insert(tk.END, v)
+        self.reload()
 
-    def on_enter(self, df_all):
-        self.reload(df_all)
+    def on_enter(self):
+        self.reload()
 
-    def all_reset(self, df_all):
+    def all_reset(self):
         print('all_reset()')
-        self.cmb_area.set('')
-        self.cmb_tdfkn.set('')
         self.txt_shop_name.delete(0, tk.END)
         self.cmb_genre.set('')
         self.cmb_yosan_night_l.set('')
@@ -215,8 +242,9 @@ class MouseApp(tk.Frame):
         self.txt_place_3.delete(0, tk.END)
         self.cmb_award.set('')
         self.cmb_meiten.set('')
+        self.reload()
 
-    def reload(self, df_all):
+    def reload(self):
         print('reload')
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
@@ -241,7 +269,7 @@ class MouseApp(tk.Frame):
         header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
         self.df_target = func.processing_data_frame(
-            df_all, area, tdfkn, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
+            self.df_small, area, tdfkn, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, heiten, kuchikomi_sort, award, meiten, special)[header_list]
         self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
         func.insert_tree(self.tree, self.df_target)

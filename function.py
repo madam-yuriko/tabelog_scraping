@@ -7,7 +7,7 @@ from const import MAX_ROW_CNT
 
 def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', heiten=False, kuchikomi_sort=False, award='', meiten='', special=''):
     start_time = time.time()
-
+    print('df_length', len(df))
     if heiten is False:
         df = df[~df.ステータス.isin(['閉店', '移転', '休業', '掲載保留'])]
     if kuchikomi_sort:
