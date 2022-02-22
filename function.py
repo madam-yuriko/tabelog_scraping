@@ -5,15 +5,24 @@ import pandas as pd
 from const import MAX_ROW_CNT
 
 
-def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', heiten=False, kuchikomi_sort=False, award='', meiten='', special=''):
+def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', heiten=False, sort_type='', award='', meiten='', special=''):
     start_time = time.time()
     print('df_length', len(df))
     if heiten is False:
         df = df[~df.ステータス.isin(['閉店', '移転', '休業', '掲載保留'])]
-    if kuchikomi_sort:
-        df = df.sort_values(['口コミ数', '点数', '保存件数'], ascending=False)
-    else:
+    if sort_type == const.SORT_TYPE_LIST[0]:
         df = df.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
+    elif sort_type == const.SORT_TYPE_LIST[1]:
+        df = df[df['点数(増減)'] != '-']
+        df['点数(増減)'] = df['点数(増減)'].astype(float)
+        df = df[df['点数(増減)'] < 2]
+        df = df.sort_values(['点数(増減)', '点数', '口コミ数', '保存件数'], ascending=False)
+    elif sort_type == const.SORT_TYPE_LIST[2]:
+        df = df.sort_values(['口コミ数', '点数', '保存件数'], ascending=False)
+    elif sort_type == const.SORT_TYPE_LIST[3]:
+        df = df.sort_values(['口コミ数(増減)', '口コミ数', '点数', '保存件数'], ascending=False)
+    else:
+        df = df.sort_values(['保存件数', '点数', '口コミ数'], ascending=False)
     df['全国順位'] = pd.RangeIndex(start=1, stop=len(df.index) + 1, step=1)
 
     if area:
@@ -49,6 +58,10 @@ def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_ge
             df = df.sort_values(['order', '点数', '口コミ数', '保存件数'])
             df = df[~df.duplicated(subset=['order'], keep='last')]
             df = df.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
+
+    df['点数'] = df['点数'].apply(lambda x: score(x))
+    df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen(x))
+    df['口コミ数(増減)'] = df['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
         
     print('processing time:', time.time() - start_time)
     return df
@@ -86,4 +99,20 @@ def insert_tree(tree, df_target):
         # 新店
         if row[24] == 'left_only':
             tree.tag_configure(i, background="#f0e68c")
+
+
+# 列加工
+def score(x):
+    return f'{x:.2f}'
+
+def score_zougen(x):
+    if x >= 1.00:
+        return '-'
+    elif x > 0:
+        return f'+{x:.2f}'
+    else:
+        return f'{x:.2f}'
+
+def kutchikomi_zougen(x):
+    return f'+{x}' if x > 0 else str(x)
 

@@ -31,22 +31,6 @@ class MouseApp(tk.Frame):
                         foreground='#ffffff',
                         background='#0000aa')
 
-        # 列加工
-        def score(x):
-            return f'{x:.2f}'
-
-        def score_zougen(x):
-            # x = f'{x:.2f}'
-            if x >= 1.00:
-                return '-'
-            elif x > 0:
-                return f'+{x:.2f}'
-            else:
-                return f'{x:.2f}'
-
-        def kutchikomi_zougen(x):
-            return f'+{x}' if x > 0 else str(x)
-
         # データフレーム取得
         df_all = pd.read_csv(const.get_csv_name(const.YEAR), encoding='utf-8', low_memory=False).fillna('')
         df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST[x])
@@ -54,10 +38,7 @@ class MouseApp(tk.Frame):
         df_all = pd.merge(df_all, df_last_year, on='ID', how='left', indicator=True)
         df_all.columns = const.MERGE_COL_NAMES
         df_all['点数(増減)'] = (df_all['点数'] - df_all['点数(昨年)'].fillna(0))
-        df_all['点数(増減)'] = df_all['点数(増減)'].apply(lambda x: score_zougen(x))
-        df_all['点数'] = df_all['点数'].apply(lambda x: score(x))
         df_all['口コミ数(増減)'] = (df_all['口コミ数'] - df_all['口コミ数(昨年)'].fillna(0)).astype(int)
-        df_all['口コミ数(増減)'] = df_all['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
         self.df_small = df_all
 
         # 県別店数カウント
@@ -117,34 +98,35 @@ class MouseApp(tk.Frame):
         self.bv2.trace("w", lambda name, index, mode, bv=self.bv2, df=df_all: self.on_text_changed(df_all))
         self.chk_heiten = tk.Checkbutton(self, variable=self.bv2, text='閉店/移転/休業/掲載保留を含む')
 
-        # 口コミ数順
-        self.bv3 = tk.BooleanVar()
-        self.bv3.trace("w", lambda name, index, mode, bv=self.bv3, df=df_all: self.on_text_changed(df_all))
-        self.chk_kuchikomi_sort = tk.Checkbutton(self, variable=self.bv3, text='口コミ数順でソート')
+        # ソート種別
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
+        self.lbl_sort_type = tk.Label(self, text='ソート種別')
+        self.cmb_sort_type = ttk.Combobox(self, width=12, textvariable=sv, height=30, values=const.SORT_TYPE_LIST)
 
         # 食べログアワード
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
         self.lbl_award = tk.Label(self, text='食べログアワード')
-        self.cmb_award = ttk.Combobox(self, width=20, textvariable=sv, height=20, values=const.AWARD_LIST)
+        self.cmb_award = ttk.Combobox(self, width=12, textvariable=sv, height=20, values=const.AWARD_LIST)
 
         # 百名店
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
         self.lbl_meiten = tk.Label(self, text='百名店')
-        self.cmb_meiten = ttk.Combobox(self, width=20, textvariable=sv, height=30, values=const.MEITEN_LIST)
+        self.cmb_meiten = ttk.Combobox(self, width=12, textvariable=sv, height=30, values=const.MEITEN_LIST)
 
         # 商業施設
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'shisetsu'))
         self.lbl_shisetsu = tk.Label(self, text='商業施設')
-        self.cmb_shisetsu = ttk.Combobox(self, width=20, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
+        self.cmb_shisetsu = ttk.Combobox(self, width=24, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
 
         # その他条件
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df))
         self.lbl_special = tk.Label(self, text='その他')
-        self.cmb_special = ttk.Combobox(self, width=20, height=30, textvariable=sv, values=const.SPECIAL_LIST)
+        self.cmb_special = ttk.Combobox(self, width=16, height=30, textvariable=sv, values=const.SPECIAL_LIST)
 
         # ツリー
         self.tree = ttk.Treeview(self)
@@ -164,6 +146,9 @@ class MouseApp(tk.Frame):
 
         # ウィジェット配置
         self.widget()
+
+        # 初期値
+        self.cmb_sort_type.current(0)
 
         # ★バグ対応を処理
         style = ttk.Style()
@@ -259,18 +244,18 @@ class MouseApp(tk.Frame):
         place2 = self.txt_place_2.get()
         place3 = self.txt_place_3.get()
         heiten = self.bv2.get()
-        kuchikomi_sort = self.bv3.get()
+        sort_type = self.cmb_sort_type.get()
         award = self.cmb_award.get()
         meiten = self.cmb_meiten.get()
         special = self.cmb_special.get()
         if tdfkn not in const.TODOFUKEN_LIST:
             return
-        print(f'{area} {tdfkn} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {heiten} {kuchikomi_sort} {award} {meiten} {special}')
+        print(f'{area} {tdfkn} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {heiten} {sort_type} {award} {meiten} {special}')
         header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
         self.df_target = func.processing_data_frame(
             self.df_small, area, tdfkn, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
-            place1, place2, place3, heiten, kuchikomi_sort, award, meiten, special)[header_list]
+            place1, place2, place3, heiten, sort_type, award, meiten, special)[header_list]
         self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
         func.insert_tree(self.tree, self.df_target)
 
@@ -298,8 +283,9 @@ class MouseApp(tk.Frame):
         self.lbl_place_3.pack(side=tk.LEFT, after=self.txt_place_2, anchor=tk.W, padx=5, pady=5)
         self.txt_place_3.pack(side=tk.LEFT, after=self.lbl_place_3, anchor=tk.W, padx=5, pady=5)
         self.chk_heiten.pack(side=tk.LEFT, after=self.txt_place_3, anchor=tk.W, padx=5, pady=5)
-        self.chk_kuchikomi_sort.pack(side=tk.LEFT, after=self.chk_heiten, anchor=tk.W, padx=5, pady=5)
-        self.lbl_award.pack(side=tk.LEFT, after=self.chk_kuchikomi_sort, anchor=tk.W, padx=5, pady=5)
+        self.lbl_sort_type.pack(side=tk.LEFT, after=self.chk_heiten, anchor=tk.W, padx=5, pady=5)
+        self.cmb_sort_type.pack(side=tk.LEFT, after=self.lbl_sort_type, anchor=tk.W, padx=5, pady=5)
+        self.lbl_award.pack(side=tk.LEFT, after=self.cmb_sort_type, anchor=tk.W, padx=5, pady=5)
         self.cmb_award.pack(side=tk.LEFT, after=self.lbl_award, anchor=tk.W, padx=5, pady=5)
         self.lbl_meiten.pack(side=tk.LEFT, after=self.cmb_award, anchor=tk.W, padx=5, pady=5)
         self.cmb_meiten.pack(side=tk.LEFT, after=self.lbl_meiten, anchor=tk.W, padx=5, pady=5)
