@@ -23,7 +23,7 @@ def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_ge
         df = df.sort_values(['口コミ数(増減)', '口コミ数', '点数', '保存件数'], ascending=False)
     else:
         df = df.sort_values(['保存件数', '点数', '口コミ数'], ascending=False)
-    df['全国順位'] = pd.RangeIndex(start=1, stop=len(df.index) + 1, step=1)
+    df['エリア順位'] = pd.RangeIndex(start=1, stop=len(df.index) + 1, step=1)
 
     if area:
         df = df[df.都道府県.str.contains(const.AREA_DICT[area])]

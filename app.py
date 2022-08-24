@@ -175,7 +175,7 @@ class MouseApp(tk.Frame):
             tdfkn = self.cmb_tdfkn.get()
             if area == '' and tdfkn == '':
                 self.df_small = df_all
-            elif area != '' and tdfken =='':
+            elif area != '' and tdfkn =='':
                 self.df_small = df_all[df_all.都道府県.str.contains(const.AREA_DICT[area])]
 
             if area != '':
