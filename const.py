@@ -143,6 +143,7 @@ TODOFUKEN_LIST = [
     '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
 ]
 
+# 都道府県コード
 TODOFUKEN_URL_LIST = {
     '01': 'hokkaido', '02': 'aomori', '03': 'iwate', '04': 'miyagi', '05': 'akita', '06': 'yamagata', '07': 'fukushima', '08': 'ibaraki', '09': 'tochigi', '10': 'gunma',
     '11': 'saitama', '12': 'chiba', '13': 'tokyo', '14': 'kanagawa', '15': 'niigata', '16': 'toyama', '17': 'ishikawa', '18': 'fukui', '19': 'yamanashi', '20': 'nagano',
@@ -150,6 +151,12 @@ TODOFUKEN_URL_LIST = {
     '31': 'tottori', '32': 'shimane', '33': 'okayama', '34': 'hiroshima', '35': 'yamaguchi', '36': 'tokushima', '37': 'kagawa', '38': 'ehime', '39': 'kochi', '40': 'fukuoka',
     '41': 'saga', '42': 'nagasaki', '43': 'kumamoto', '44': 'oita', '45': 'miyazaki', '46': 'kagoshima', '47': 'okinawa',
 }
+
+# 点数帯リスト
+SCORE_LIST = [
+    '', '3.00未満', '3.00以上', '3.10以上', '3.20以上', '3.30以上', '3.40以上', '3.50以上', '3.60以上', '3.70以上', '3.80以上', '3.90以上',
+    '4.00以上', '4.10以上', '4.20以上', '4.30以上', '4.40以上', '4.50以上', '4.60以上', '4.70以上',
+]
 
 # ジャンル一覧
 GENRE_LIST = None

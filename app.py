@@ -69,15 +69,22 @@ class MouseApp(tk.Frame):
         self.lbl_tdfkn = tk.Label(self, text='都道府県')
         self.cmb_tdfkn = ttk.Combobox(self, width=10, height=50, textvariable=sv, values=const.TODOFUKEN_LIST)
 
+        # 点数
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'score'))
+        self.lbl_score_condition = tk.Label(self, text='点数')
+        self.cmb_score_condition = ttk.Combobox(self, width=10, height=50, textvariable=sv, values=const.SCORE_LIST)
+
         # 店名
         self.lbl_shop_name = tk.Label(self, text='店名')
         self.txt_shop_name = tk.Entry(self, width=20)
         self.txt_shop_name.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
         # ジャンル
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'genre'))
         self.lbl_genre = tk.Label(self, text='ジャンル')
-        self.cmb_genre = ttk.Combobox(self, width=20, height=40, values=const.GENRE_LIST)
-        self.cmb_genre.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.cmb_genre = ttk.Combobox(self, width=20, height=40, textvariable=sv, values=const.GENRE_LIST)
 
         # ジャンル1のみ
         self.bv1 = tk.BooleanVar()
@@ -184,26 +191,21 @@ class MouseApp(tk.Frame):
 
     def on_text_changed(self, df_all, name=''):
         print(name)
+        df_temp = df_all.copy()
         if name == 'area':
             # df_allを削減して高速化
             area = self.cmb_area.get()
             tdfkn = self.cmb_tdfkn.get()
-            if area == '' and tdfkn == '':
-                self.df_small = df_all
-            elif area != '' and tdfkn =='':
-                self.df_small = df_all[df_all.都道府県.str.contains(const.AREA_DICT[area])]
-
+            if area != '' and tdfkn =='':
+                df_temp = df_temp[df_temp.都道府県.str.contains(const.AREA_DICT[area])]
             if area != '':
                 self.cmb_tdfkn.set('')
         elif name == 'tdfkn':
             # df_allを削減して高速化
             area = self.cmb_area.get()
             tdfkn = self.cmb_tdfkn.get()
-            if area == '' and tdfkn == '':
-                self.df_small = df_all
-            elif tdfkn != '' and area =='':
-                self.df_small = df_all[df_all.都道府県.str.contains(tdfkn)]
-
+            if tdfkn != '' and area =='':
+                df_temp = df_temp[df_temp.都道府県.str.contains(tdfkn)]
             if tdfkn != '':
                 self.cmb_area.set('')
         elif name == 'shisetsu':
@@ -226,6 +228,19 @@ class MouseApp(tk.Frame):
                         self.txt_place_2.insert(tk.END, v)
                     elif k == '場所3':
                         self.txt_place_3.insert(tk.END, v)
+        if self.cmb_score_condition.get():
+            # df_allを削減して高速化
+            score_condition = self.cmb_score_condition.get()
+            if score_condition == '3.00未満':
+                df_temp = df_temp[df_temp.点数 < 3.00]
+            else:
+                df_temp = df_temp[df_temp.点数 >= float(score_condition[:4])]
+        if self.cmb_genre.get():
+            # df_allを削減して高速化
+            genre = self.cmb_genre.get()
+            df_temp = df_temp[df_temp.ジャンル1 == genre]
+
+        self.df_small = df_temp.copy()
         self.reload()
 
     def on_enter(self):
@@ -248,6 +263,7 @@ class MouseApp(tk.Frame):
         print('reload')
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
+        score_condition = self.cmb_score_condition.get()
         shop_name = self.txt_shop_name.get().replace(' ', '')
         genre = self.cmb_genre.get()
         only_genre1 = self.bv1.get()
@@ -266,11 +282,11 @@ class MouseApp(tk.Frame):
         special = self.cmb_special.get()
         if tdfkn not in const.TODOFUKEN_LIST:
             return
-        print(f'{area} {tdfkn} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {new_open} {heiten} {sort_type} {award} {meiten} {special}')
+        print(f'{area} {tdfkn} {score_condition} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {new_open} {heiten} {sort_type} {award} {meiten} {special}')
         header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
         self.df_target = func.processing_data_frame(
-            self.df_small, area, tdfkn, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
+            self.df_small, shop_name, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, new_open, heiten, sort_type, award, meiten, special)[header_list]
         self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
         func.insert_tree(self.tree, self.df_target)
@@ -283,7 +299,9 @@ class MouseApp(tk.Frame):
         self.cmb_area.pack(side=tk.LEFT, after=self.lbl_area, anchor=tk.W, padx=5, pady=5)
         self.lbl_tdfkn.pack(side=tk.LEFT, after=self.cmb_area, anchor=tk.W, padx=5, pady=5)
         self.cmb_tdfkn.pack(side=tk.LEFT, after=self.lbl_tdfkn, anchor=tk.W, padx=5, pady=5)
-        self.lbl_shop_name.pack(side=tk.LEFT, after=self.cmb_tdfkn, anchor=tk.W, padx=5, pady=5)
+        self.lbl_score_condition.pack(side=tk.LEFT, after=self.cmb_tdfkn, anchor=tk.W, padx=5, pady=5)
+        self.cmb_score_condition.pack(side=tk.LEFT, after=self.lbl_score_condition, anchor=tk.W, padx=5, pady=5)
+        self.lbl_shop_name.pack(side=tk.LEFT, after=self.cmb_score_condition, anchor=tk.W, padx=5, pady=5)
         self.txt_shop_name.pack(side=tk.LEFT, after=self.lbl_shop_name, anchor=tk.W, padx=5, pady=5)
         self.lbl_genre.pack(side=tk.LEFT, after=self.txt_shop_name, anchor=tk.W, padx=5, pady=5)
         self.cmb_genre.pack(side=tk.LEFT, after=self.lbl_genre, anchor=tk.W, padx=5, pady=5)
