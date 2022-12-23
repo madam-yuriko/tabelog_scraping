@@ -81,10 +81,9 @@ class MouseApp(tk.Frame):
         self.txt_shop_name.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
         # ジャンル
-        sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'genre'))
         self.lbl_genre = tk.Label(self, text='ジャンル')
-        self.cmb_genre = ttk.Combobox(self, width=20, height=40, textvariable=sv, values=const.GENRE_LIST)
+        self.cmb_genre = ttk.Combobox(self, width=20, height=40, values=const.GENRE_LIST)
+        self.cmb_genre.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
         # ジャンル1のみ
         self.bv1 = tk.BooleanVar()
@@ -235,10 +234,6 @@ class MouseApp(tk.Frame):
                 df_temp = df_temp[df_temp.点数 < 3.00]
             else:
                 df_temp = df_temp[df_temp.点数 >= float(score_condition[:4])]
-        if self.cmb_genre.get():
-            # df_allを削減して高速化
-            genre = self.cmb_genre.get()
-            df_temp = df_temp[df_temp.ジャンル1 == genre]
 
         self.df_small = df_temp.copy()
         self.reload()
@@ -286,7 +281,7 @@ class MouseApp(tk.Frame):
         header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
         self.df_target = func.processing_data_frame(
-            self.df_small, shop_name, only_genre1, yosan_night_l, yosan_night_h, 
+            self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, new_open, heiten, sort_type, award, meiten, special)[header_list]
         self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
         func.insert_tree(self.tree, self.df_target)

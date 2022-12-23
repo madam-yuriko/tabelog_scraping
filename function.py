@@ -5,7 +5,7 @@ import pandas as pd
 from const import MAX_ROW_CNT
 
 
-def processing_data_frame(df, shop_name='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', new_open=False, heiten=False, sort_type='', award='', meiten='', special=''):
+def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', new_open=False, heiten=False, sort_type='', award='', meiten='', special=''):
     start_time = time.time()
     print('df_length', len(df))
     if heiten is False:
@@ -28,6 +28,8 @@ def processing_data_frame(df, shop_name='', only_genre1=False, yosan_night_l='',
 
     if shop_name:
         df = df[df.店名.str.lower().str.replace(' ', '').str.contains(shop_name.lower().replace(' ', ''))]
+    if genre:
+        df = df[df.ジャンル1.str.contains(genre) | df.ジャンル2.str.contains(genre) | df.ジャンル3.str.contains(genre)]
     if only_genre1:
         df = df[df.ジャンル1.str.contains(genre)]
     if yosan_night_l != 1 or yosan_night_h != 17:
