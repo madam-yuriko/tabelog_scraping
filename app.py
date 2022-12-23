@@ -4,7 +4,7 @@ import pandas as pd
 import webbrowser
 import const
 import function as func
-import re
+import time
 
 
 # アプリの定義
@@ -22,6 +22,8 @@ class MouseApp(tk.Frame):
 
         tk.Frame.__init__(self, master, width=720, height=1080)
 
+        start_time = time.time()
+
         # タイトルの表示
         self.master.title('食べログ')
 
@@ -32,13 +34,21 @@ class MouseApp(tk.Frame):
                         background='#0000aa')
 
         # データフレーム取得
+        print('--------2022年CSV読み込み開始-------')
         df_all = pd.read_csv(const.get_csv_name(const.YEAR), encoding='utf-8', low_memory=False).fillna('')
+        print('--------2022年CSV読み込み完了-------', f'{time.time() - start_time}sec')
         df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST[x])
+        print('--------2021年CSV読み込み開始-------')
         df_last_year = pd.read_csv(const.get_csv_name(const.YEAR - 1), usecols=['ID', '点数', '口コミ数'], encoding='utf-8', low_memory=False).fillna('')
+        print('--------2021年CSV読み込み完了-------', f'{time.time() - start_time}sec')
         df_all = pd.merge(df_all, df_last_year, on='ID', how='left', indicator=True)
         df_all.columns = const.MERGE_COL_NAMES
-        df_all['点数(増減)'] = (df_all['点数'] - df_all['点数(昨年)'].fillna(0))
-        df_all['口コミ数(増減)'] = (df_all['口コミ数'] - df_all['口コミ数(昨年)'].fillna(0)).astype(int)
+        df_all['点数(増減)'] = (df_all['点数'].fillna(0) - df_all['点数(昨年)'].fillna(0))
+        df_all['口コミ数(増減)'] = (df_all['口コミ数'].fillna(0) - df_all['口コミ数(昨年)'].fillna(0)).astype(int)
+        df_all = df_all.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
+        index = df_all.reset_index().index
+        index = [i+1 for i in index]
+        df_all['全国順位'] = index
         self.df_small = df_all
 
         # 県別店数カウント
@@ -92,6 +102,11 @@ class MouseApp(tk.Frame):
         self.lbl_place_3 = tk.Label(self, text='場所3')
         self.txt_place_3 = tk.Entry(self, width=20)
         self.txt_place_3.bind('<Return>', lambda event, df=df_all: self.on_enter())
+
+        # 新規オープン
+        self.bv3 = tk.BooleanVar()
+        self.bv3.trace("w", lambda name, index, mode, bv=self.bv3, df=df_all: self.on_text_changed(df_all))
+        self.chk_new = tk.Checkbutton(self, variable=self.bv3, text='新規オープン')
 
         # 閉店・移転
         self.bv2 = tk.BooleanVar()
@@ -243,6 +258,7 @@ class MouseApp(tk.Frame):
         place1 = self.txt_place_1.get()
         place2 = self.txt_place_2.get()
         place3 = self.txt_place_3.get()
+        new_open = self.bv3.get()
         heiten = self.bv2.get()
         sort_type = self.cmb_sort_type.get()
         award = self.cmb_award.get()
@@ -250,12 +266,12 @@ class MouseApp(tk.Frame):
         special = self.cmb_special.get()
         if tdfkn not in const.TODOFUKEN_LIST:
             return
-        print(f'{area} {tdfkn} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {heiten} {sort_type} {award} {meiten} {special}')
+        print(f'{area} {tdfkn} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {new_open} {heiten} {sort_type} {award} {meiten} {special}')
         header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
         self.df_target = func.processing_data_frame(
             self.df_small, area, tdfkn, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
-            place1, place2, place3, heiten, sort_type, award, meiten, special)[header_list]
+            place1, place2, place3, new_open, heiten, sort_type, award, meiten, special)[header_list]
         self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
         func.insert_tree(self.tree, self.df_target)
 
@@ -282,7 +298,8 @@ class MouseApp(tk.Frame):
         self.txt_place_2.pack(side=tk.LEFT, after=self.lbl_place_2, anchor=tk.W, padx=5, pady=5)
         self.lbl_place_3.pack(side=tk.LEFT, after=self.txt_place_2, anchor=tk.W, padx=5, pady=5)
         self.txt_place_3.pack(side=tk.LEFT, after=self.lbl_place_3, anchor=tk.W, padx=5, pady=5)
-        self.chk_heiten.pack(side=tk.LEFT, after=self.txt_place_3, anchor=tk.W, padx=5, pady=5)
+        self.chk_new.pack(side=tk.LEFT, after=self.txt_place_3, anchor=tk.W, padx=5, pady=5)
+        self.chk_heiten.pack(side=tk.LEFT, after=self.chk_new, anchor=tk.W, padx=5, pady=5)
         self.lbl_sort_type.pack(side=tk.LEFT, after=self.chk_heiten, anchor=tk.W, padx=5, pady=5)
         self.cmb_sort_type.pack(side=tk.LEFT, after=self.lbl_sort_type, anchor=tk.W, padx=5, pady=5)
         self.lbl_award.pack(side=tk.LEFT, after=self.cmb_sort_type, anchor=tk.W, padx=5, pady=5)

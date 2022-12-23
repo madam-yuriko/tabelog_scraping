@@ -5,7 +5,7 @@ import pandas as pd
 from const import MAX_ROW_CNT
 
 
-def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', heiten=False, sort_type='', award='', meiten='', special=''):
+def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', new_open=False, heiten=False, sort_type='', award='', meiten='', special=''):
     start_time = time.time()
     print('df_length', len(df))
     if heiten is False:
@@ -23,6 +23,7 @@ def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_ge
         df = df.sort_values(['口コミ数(増減)', '口コミ数', '点数', '保存件数'], ascending=False)
     else:
         df = df.sort_values(['保存件数', '点数', '口コミ数'], ascending=False)
+    
     df['エリア順位'] = pd.RangeIndex(start=1, stop=len(df.index) + 1, step=1)
 
     if area:
@@ -43,6 +44,8 @@ def processing_data_frame(df, area='', tdfkn='', shop_name='', genre='', only_ge
         df = df[df.所在地.str.lower().str.replace(' ', '').str.contains(place2.lower().replace(' ', '')) | df.施設名.str.lower().str.replace(' ', '').str.contains(place2.lower().replace(' ', '')) | df.最寄り駅.str.lower().str.replace(' ', '').str.contains(place2.lower().replace(' ', ''))]
     if place3:
         df = df[df.所在地.str.lower().str.replace(' ', '').str.contains(place3.lower().replace(' ', '')) | df.施設名.str.lower().str.replace(' ', '').str.contains(place3.lower().replace(' ', '')) | df.最寄り駅.str.lower().str.replace(' ', '').str.contains(place3.lower().replace(' ', ''))]
+    if new_open:
+        df = df[df._merge == 'left_only']
     if award:
         df = df[df.食べログアワード.str.contains(award)]
     if meiten:

@@ -1,3 +1,3 @@
-cd C:\Users\world\git\tabelog_scraping
+C:\Users\yoshi\git\tabelog_scraping
 python ./app.py
 pause
