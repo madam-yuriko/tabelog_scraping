@@ -111,29 +111,29 @@ class MouseApp(tk.Frame):
 
         # 新規オープン
         self.bv3 = tk.BooleanVar()
-        self.bv3.trace("w", lambda name, index, mode, bv=self.bv3, df=df_all: self.on_text_changed(df_all))
+        self.bv3.trace("w", lambda name, index, mode, bv=self.bv3, df=df_all: self.on_check_changed())
         self.chk_new = tk.Checkbutton(self, variable=self.bv3, text='新規オープン')
 
         # 閉店・移転
         self.bv2 = tk.BooleanVar()
-        self.bv2.trace("w", lambda name, index, mode, bv=self.bv2, df=df_all: self.on_text_changed(df_all))
+        self.bv2.trace("w", lambda name, index, mode, bv=self.bv2, df=df_all: self.on_check_changed())
         self.chk_heiten = tk.Checkbutton(self, variable=self.bv2, text='閉店/移転/休業/掲載保留を含む')
 
         # ソート種別
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
         self.lbl_sort_type = tk.Label(self, text='ソート種別')
         self.cmb_sort_type = ttk.Combobox(self, width=12, textvariable=sv, height=30, values=const.SORT_TYPE_LIST)
 
         # 食べログアワード
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
         self.lbl_award = tk.Label(self, text='食べログアワード')
         self.cmb_award = ttk.Combobox(self, width=12, textvariable=sv, height=20, values=const.AWARD_LIST)
 
         # 百名店
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
         self.lbl_meiten = tk.Label(self, text='百名店')
         self.cmb_meiten = ttk.Combobox(self, width=12, textvariable=sv, height=30, values=const.MEITEN_LIST)
 
@@ -232,6 +232,12 @@ class MouseApp(tk.Frame):
                 df_temp = df_temp[df_temp.点数 >= float(score_condition[:4])]
 
         self.df_small = df_temp.copy()
+        self.reload()
+
+    def on_check_changed(self):
+        self.reload()
+
+    def on_select_changed(self):
         self.reload()
 
     def on_enter(self):
