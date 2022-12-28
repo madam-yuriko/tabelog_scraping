@@ -189,47 +189,43 @@ class MouseApp(tk.Frame):
             self.link = self.df_target.iloc[no].URL
 
     def on_text_changed(self, df_all, name=''):
-        print(name)
+        print('on_text_changed', name)
         df_temp = df_all.copy()
-        if name == 'area':
-            # df_allを削減して高速化
-            area = self.cmb_area.get()
-            tdfkn = self.cmb_tdfkn.get()
-            if area != '' and tdfkn =='':
-                df_temp = df_temp[df_temp.都道府県.str.contains(const.AREA_DICT[area])]
-            if area != '':
-                self.cmb_tdfkn.set('')
-        elif name == 'tdfkn':
-            # df_allを削減して高速化
-            area = self.cmb_area.get()
-            tdfkn = self.cmb_tdfkn.get()
-            if tdfkn != '' and area =='':
-                df_temp = df_temp[df_temp.都道府県.str.contains(tdfkn)]
-            if tdfkn != '':
-                self.cmb_area.set('')
-        elif name == 'shisetsu':
-            if self.cmb_shisetsu.get() == '':
-                self.all_reset()
-            else:
-                self.txt_place_1.delete(0, tk.END)
-                self.txt_place_2.delete(0, tk.END)
-                self.txt_place_3.delete(0, tk.END)
-                self.txt_shop_name.delete(0, tk.END)
-                shisetsu = const.SHISETSU_DICT[self.cmb_shisetsu.get()]
-                for k, v in shisetsu.items():
-                    if k == '都道府県':
-                        tdfkn = self.cmb_tdfkn.get()
-                        if tdfkn != v:
-                            self.cmb_tdfkn.set(v)
-                    elif k == '場所1':
-                        self.txt_place_1.insert(tk.END, v)
-                    elif k == '場所2':
-                        self.txt_place_2.insert(tk.END, v)
-                    elif k == '場所3':
-                        self.txt_place_3.insert(tk.END, v)
-        if self.cmb_score_condition.get():
-            # df_allを削減して高速化
-            score_condition = self.cmb_score_condition.get()
+        area = self.cmb_area.get()
+        tdfkn = self.cmb_tdfkn.get()
+        shisetsu = self.cmb_shisetsu.get()
+        score_condition = self.cmb_score_condition.get()
+
+        if shisetsu:
+            self.txt_place_1.delete(0, tk.END)
+            self.txt_place_2.delete(0, tk.END)
+            self.txt_place_3.delete(0, tk.END)
+            self.txt_shop_name.delete(0, tk.END)
+            shisetsu = const.SHISETSU_DICT[self.cmb_shisetsu.get()]
+            for k, v in shisetsu.items():
+                if k == '都道府県':
+                    tdfkn = self.cmb_tdfkn.get()
+                    if tdfkn != v:
+                        self.cmb_tdfkn.set(v)
+                elif k == '場所1':
+                    self.txt_place_1.insert(tk.END, v)
+                elif k == '場所2':
+                    self.txt_place_2.insert(tk.END, v)
+                elif k == '場所3':
+                    self.txt_place_3.insert(tk.END, v)
+        else:
+            self.all_reset()
+
+        if area:
+            df_temp = df_temp[df_temp.都道府県.str.contains(const.AREA_DICT[area])]
+            self.cmb_tdfkn['values'] = const.AREA_DICT[area].split('|')
+        else:
+            self.cmb_tdfkn['values'] = const.TODOFUKEN_LIST
+
+        if tdfkn:
+            df_temp = df_temp[df_temp.都道府県.str.contains(tdfkn)]
+
+        if score_condition:
             if score_condition == '3.00未満':
                 df_temp = df_temp[df_temp.点数 < 3.00]
             else:
