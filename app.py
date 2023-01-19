@@ -6,6 +6,7 @@ import const
 import function as func
 import time
 
+from const import MAX_ROW_CNT
 
 # アプリの定義
 class MouseApp(tk.Frame):
@@ -178,7 +179,6 @@ class MouseApp(tk.Frame):
 
         self.reload()
 
-
     def hyper_link(self, event):
         webbrowser.open(self.link)
 
@@ -196,7 +196,7 @@ class MouseApp(tk.Frame):
         shisetsu = self.cmb_shisetsu.get()
         score_condition = self.cmb_score_condition.get()
 
-        if shisetsu:
+        if shisetsu and name == 'shisetsu':
             self.txt_place_1.delete(0, tk.END)
             self.txt_place_2.delete(0, tk.END)
             self.txt_place_3.delete(0, tk.END)
@@ -207,6 +207,7 @@ class MouseApp(tk.Frame):
                     tdfkn = self.cmb_tdfkn.get()
                     if tdfkn != v:
                         self.cmb_tdfkn.set(v)
+                        tdfkn = v
                 elif k == '場所1':
                     self.txt_place_1.insert(tk.END, v)
                 elif k == '場所2':
@@ -282,11 +283,12 @@ class MouseApp(tk.Frame):
         print(f'{area} {tdfkn} {score_condition} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {new_open} {heiten} {sort_type} {award} {meiten} {special}')
         header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
-        self.df_target = func.processing_data_frame(
+        self.df_target, df_total = func.processing_data_frame(
             self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
-            place1, place2, place3, new_open, heiten, sort_type, award, meiten, special)[header_list]
+            place1, place2, place3, new_open, heiten, sort_type, award, meiten, special
+        )
         self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
-        func.insert_tree(self.tree, self.df_target)
+        func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list])
 
     def widget(self):
         # ウィジェット配置

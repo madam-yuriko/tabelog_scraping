@@ -58,12 +58,19 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
             df = df[~df.duplicated(subset=['order'], keep='last')]
             df = df.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
 
+    df_total = pd.DataFrame(columns=df.columns)
+    df_total.loc['Total'] = '-'
+    df_total.loc['Total', '全国順位'] = 'Total'
+    df_total.loc['Total', '口コミ数'] = df['口コミ数'].sum()
+    df_total.loc['Total', '口コミ数(増減)'] = f'+{df["口コミ数(増減)"].sum()}'
+    df_total.loc['Total', '保存件数'] = df['保存件数'].sum()
+
     df['点数'] = df['点数'].apply(lambda x: score(x))
     df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen(x))
     df['口コミ数(増減)'] = df['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
         
     print('processing time:', time.time() - start_time)
-    return df
+    return df, df_total
 
 
 def insert_tree(tree, df_target):
@@ -71,20 +78,22 @@ def insert_tree(tree, df_target):
     for i in tree.get_children():
         tree.delete(i)
     # 再描画
-    df_target = df_target.iloc[0:MAX_ROW_CNT]
     for i, row in enumerate(df_target.itertuples()):
         # 一覧に入力
         award_str = ''
         row = list(row)
         # 食べログアワード書き換え
-        for award in row[11].split('/'):
-            award_str += award[2:6].replace(' ', '') + '/'
-        row[11] = award_str[0:-2]
+        if type(row[11]) == str:
+            for award in row[11].split('/'):
+                award_str += award[2:6].replace(' ', '') + '/'
+            row[11] = award_str[0:-2]
         # 百名店書き換え
-        meiten_str = re.sub(r'\d', '', row[12].split('/')[0]) + ' '
-        for meiten in row[12].split('/'):
-            meiten_str += meiten[-2:] + '/'
-        row[12] = meiten_str[0:-2]
+        if type(row[12]) == str:
+            meiten_str = re.sub(r'\d', '', row[12].split('/')[0]) + ' '
+            for meiten in row[12].split('/'):
+                meiten_str += meiten[-2:] + '/'
+            row[12] = meiten_str[0:-2]
+
         tree.insert("", "end", tags=i, values=[i+1] + list(row[1:len(const.DATA_FLAME_LAYOUT)+1]))
         
         # バックグラウンドカラー変更
