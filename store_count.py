@@ -57,8 +57,3 @@ if __name__ == '__main__':
     parser.add_argument('-y', type=int, required=True) # 入力ファイルの年度指定
     args = parser.parse_args()
     main(args)
-
-
-# import pandas as pd
-# df = pd.DataFrame.from_dict({'01': 100, '02': 125, '03': 75}, orient='index')
-# df.to_csv(f'store_count_9999.csv', header=None)
