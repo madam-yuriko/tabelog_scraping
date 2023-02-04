@@ -35,21 +35,25 @@ class MouseApp(tk.Frame):
                         background='#0000aa')
 
         # データフレーム取得
-        print('--------2022年CSV読み込み開始-------')
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+
+        print(f'--------{const.YEAR}年CSV読み込み開始-------')
         df_all = pd.read_csv(const.get_csv_name(const.YEAR), encoding='utf-8', low_memory=False).fillna('')
-        print('--------2022年CSV読み込み完了-------', f'{time.time() - start_time}sec')
-        df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST[x])
-        print('--------2021年CSV読み込み開始-------')
-        df_last_year = pd.read_csv(const.get_csv_name(const.YEAR - 1), usecols=['ID', '点数', '口コミ数'], encoding='utf-8', low_memory=False).fillna('')
-        print('--------2021年CSV読み込み完了-------', f'{time.time() - start_time}sec')
+        print(f'--------{const.YEAR}年CSV読み込み完了-------', f'{time.time() - start_time}sec')
+        df_all['予算(夜)'] = df_all['予算(夜)'].replace(0, '-')
+        df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST.get(x, 0))
+        print(f'--------{const.YEAR - 1}年CSV読み込み開始-------')
+        df_last_year = pd.read_csv(const.get_csv_name(const.YEAR - 1), usecols=['ID', 'ステータス', '点数', '口コミ数'], encoding='utf-8', low_memory=False).fillna('')
+        print(f'--------{const.YEAR - 1}年CSV読み込み完了-------', f'{time.time() - start_time}sec')
         df_all = pd.merge(df_all, df_last_year, on='ID', how='left', indicator=True)
         df_all.columns = const.MERGE_COL_NAMES
-        df_all['点数(増減)'] = (df_all['点数'].fillna(0) - df_all['点数(昨年)'].fillna(0))
-        df_all['口コミ数(増減)'] = (df_all['口コミ数'].fillna(0) - df_all['口コミ数(昨年)'].fillna(0)).astype(int)
+        df_all['点数(増減)'] = (df_all['点数'].fillna(0).replace('', 0).astype(float) - df_all['点数(昨年)'].fillna(0).replace('', 0).astype(float))
+        df_all['口コミ数(増減)'] = (df_all['口コミ数'].fillna(0).replace('-', 0).astype(int) - df_all['口コミ数(昨年)'].fillna(0).replace('-', 0).astype(int))
+        df_all['ステータス'] = df_all[['ステータス', 'ステータス(昨年)']].apply(lambda x: '去年閉店' if x[0] in ['閉店', '移転', '休業', '掲載保留'] and x[1] == '' else x[0], axis=1)
         df_all = df_all.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
         index = df_all.reset_index().index
-        index = [i+1 for i in index]
-        df_all['全国順位'] = index
+        df_all['全国順位'] = [i+1 for i in index]
         self.df_small = df_all
 
         # 県別店数カウント
@@ -287,7 +291,8 @@ class MouseApp(tk.Frame):
             self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, new_open, heiten, sort_type, award, meiten, special
         )
-        self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 口コミ数 {"{:,}".format(self.df_target["口コミ数"].sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].sum())}件'
+        self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 ' \
+                                 f'口コミ数 {"{:,}".format(self.df_target["口コミ数"].astype(int).sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].astype(int).sum())}件'
         func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list])
 
     def widget(self):

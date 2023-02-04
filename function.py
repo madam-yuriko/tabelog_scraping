@@ -59,14 +59,18 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
             df = df.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
 
     df_total = pd.DataFrame(columns=df.columns)
-    df_total.loc['Total'] = '-'
+    df_total.loc['Total'] = ''
     df_total.loc['Total', '全国順位'] = 'Total'
+    df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen_int(x))
+    score_zougen = df[df['点数(増減)'] != '-']['点数(増減)'].sum()
+    score_zougen = f'+{score_zougen:.2f}' if score_zougen > 0 else f'{score_zougen:.2f}'
+    df_total.loc['Total', '点数(増減)'] = score_zougen
     df_total.loc['Total', '口コミ数'] = df['口コミ数'].sum()
     df_total.loc['Total', '口コミ数(増減)'] = f'+{df["口コミ数(増減)"].sum()}'
     df_total.loc['Total', '保存件数'] = df['保存件数'].sum()
 
     df['点数'] = df['点数'].apply(lambda x: score(x))
-    df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen(x))
+    df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen_str(x))
     df['口コミ数(増減)'] = df['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
         
     print('processing time:', time.time() - start_time)
@@ -98,7 +102,7 @@ def insert_tree(tree, df_target):
         
         # バックグラウンドカラー変更
         # 閉店他
-        if row[3] in ['閉店', '移転', '休業', '掲載保留']:
+        if row[3] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
             tree.tag_configure(i, background="#cccccc")
         elif i % 2 == 0:
             tree.tag_configure(i, background="#ffffff")
@@ -113,7 +117,13 @@ def insert_tree(tree, df_target):
 def score(x):
     return f'{x:.2f}'
 
-def score_zougen(x):
+def score_zougen_int(x):
+    if x >= 1.00:
+        return 0
+    else:
+        return x
+
+def score_zougen_str(x):
     if x >= 1.00:
         return '-'
     elif x > 0:
