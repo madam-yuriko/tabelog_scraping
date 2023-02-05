@@ -2,13 +2,13 @@ from bs4 import BeautifulSoup
 import const
 import datetime
 import re
-import sys
 import os
 import jaconv
 import pandas as pd
 import fasteners
 import pickle
 
+global exist_count
 
 def extraction(response, store_id, url, year):
     df = pd.DataFrame()
@@ -90,27 +90,30 @@ def preprocessing(year):
     df = pd.read_csv(f'store_count_{year}.csv', header=None)
     for i in df.itertuples():
         all_id_list += range(i[1]*1000000, i[2])
-    all_id_list = [str(j).zfill(8) for j in all_id_list]
-    all_id_count = len(all_id_list)
+    all_id_set = set([str(j).zfill(8) for j in all_id_list])
+    all_id_count = len(all_id_set)
     print(f'All store id count: {all_id_count}')
 
-    if os.path.exists(f'./remaining_id_{year}.binaryfile'):
-        # 残IDファイルが存在(処理中)
-        with open(f'remaining_id_{year}.binaryfile', mode='rb') as f:
-            remaining_id_list = pickle.load(f)
-    else:
-        # 残IDファイルが無い(初回処理)
-        remaining_id_list = all_id_list.copy()
-        with open(f'remaining_id_{year}.binaryfile', mode='wb') as f:
-            pickle.dump(all_id_list , f)
-    print(f'Remaining store id count: {len(remaining_id_list)}')
+    exist_id_set = set()
+    if os.path.isfile(const.get_csv_name(const.YEAR)):
+        df_exist = pd.read_csv(const.get_csv_name(const.YEAR), encoding='utf-8', usecols=[0], dtype={'ID': str}, low_memory=False)
+        exist_id_set = set(df_exist['ID'].astype(str).tolist())
+    exist_count = len(exist_id_set)
+    with open(f'count.binaryfile', mode='wb') as f:
+        pickle.dump(exist_count , f)
+
+    remaining_id_list = list(all_id_set - exist_id_set)
+    print('remaining_id_set', len(remaining_id_list))
 
     return all_id_count, remaining_id_list
 
 
 @fasteners.interprocess_locked(f'lock_file_c')
 def write_csv(df):
-    df.to_csv(f'data_base_all.csv', mode='a', header=None)
+    if os.path.isfile(const.get_csv_name(const.YEAR)):
+        df.to_csv(const.get_csv_name(const.YEAR), mode='a', header=None)
+    else:
+        df.to_csv(const.get_csv_name(const.YEAR), mode='a', header=True, index_label='ID')
 
 
 @fasteners.interprocess_locked(f'lock_file_p')
@@ -127,19 +130,9 @@ def add_count():
         return count
 
 
-@fasteners.interprocess_locked(f'lock_file_r')
-def update_remining_id(year, loaded_store_id):
-    with open(f'remaining_id_{year}.binaryfile', mode='rb') as f:
-        remaining_id_list = pickle.load(f)
-    print(loaded_store_id)
-    remaining_id_list = list(set(remaining_id_list) - loaded_store_id)
-    with open(f'remaining_id_{year}.binaryfile', mode='wb') as f:
-        pickle.dump(remaining_id_list , f)
-
-
 def sort_csv_file(year):
     print('CSV file sort start')
     df = pd.read_csv(f'data_base_all_{year}.csv', dtype = {'ID': str}, encoding='utf-8', low_memory=False)
     df = df.sort_values('ID')
-    df.to_csv(f'data_base_all_{year}_s.csv', index=None)
+    df.to_csv(f'data_base_all_{year}.csv', index=None)
     print('CSV file sort end')

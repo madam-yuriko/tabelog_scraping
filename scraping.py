@@ -39,25 +39,20 @@ def main(args):
 
 
 def request(year, p_id, id_list, all_id_count):
-    try:
-        loaded_store_id = set()
-        for store_id in id_list:
-            tdfkn = const.TODOFUKEN_URL_LIST[store_id[:2]]
-            url = f'https://tabelog.com/{tdfkn}/A0101/A010101/{store_id}/'
+    loaded_store_id = set()
+    for store_id in id_list:
+        tdfkn = const.TODOFUKEN_URL_LIST[store_id[:2]]
+        url = f'https://tabelog.com/{tdfkn}/A0101/A010101/{store_id}/'
 
-            # HTTPリクエスト
-            response = requests.get(url)
-            loaded_store_id.add(store_id)
-            count = ipfunc.add_count()
-            print(f'Process ID:{p_id} progress:{count} / {all_id_count} status:{response.status_code}\r', end="")
-            if response.status_code != 200:
-                continue
-            # 店舗ごとに処理
-            ipfunc.extraction(response, store_id, url, year)
-    finally:
-        # 処理が終了または中止した場合はpickleに残店舗IDを保存
-        ipfunc.update_remining_id(year, loaded_store_id)
-        print(f'{p_id}: write pickle')
+        # HTTPリクエスト
+        response = requests.get(url)
+        loaded_store_id.add(store_id)
+        count = ipfunc.add_count()
+        print(f'Process ID:{p_id} progress:{count} / {all_id_count} status:{response.status_code}\r', end="")
+        if response.status_code != 200:
+            continue
+        # 店舗ごとに処理
+        ipfunc.extraction(response, store_id, url, year)
     
 
 if __name__ == '__main__':
