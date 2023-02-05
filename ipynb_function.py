@@ -74,7 +74,10 @@ def extraction(response, store_id, url, year):
                 elems = soup.select(selector)
                 value = elems[0].contents[0]
             if key not in ['取得日時']:
-                value = jaconv.z2h(value, kana=False, digit=True, ascii=True).replace('~', '～').replace(',', '').replace('\n', '').strip()
+                if key == '点数':
+                    value = jaconv.z2h(value, kana=False, digit=True, ascii=True).replace('-', '0.00').replace('~', '～').replace(',', '').replace('\n', '').strip()
+                else:
+                    value = jaconv.z2h(value, kana=False, digit=True, ascii=True).replace('~', '～').replace(',', '').replace('\n', '').strip()
 
             df.loc[store_id, key] = value
         except Exception:
