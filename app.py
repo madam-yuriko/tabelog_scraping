@@ -154,15 +154,9 @@ class MouseApp(tk.Frame):
         self.lbl_special = tk.Label(self, text='その他')
         self.cmb_special = ttk.Combobox(self, width=16, height=30, textvariable=sv, values=const.SPECIAL_LIST)
 
-        # ツリー
-        self.tree = ttk.Treeview(self)
-        self.tree['height'] = const.VIEW_ROW_CNT
-        self.tree["column"] = list(const.DATA_FLAME_LAYOUT.keys())
-        self.tree["show"] = "headings"
-        [self.tree.heading(k, text=k) for k in const.DATA_FLAME_LAYOUT.keys()]
-        [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
-        self.tree.bind("<Double-1>", self.hyper_link)
-        self.tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_select(event))
+        # ツリーレイアウト 
+        self.tree = None
+        self.make_tree()
 
         # スクロールバー
         scroll = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
@@ -182,6 +176,16 @@ class MouseApp(tk.Frame):
         style.configure("Treeview", font=("Arial", 11, 'bold'), rowheight=28)
 
         self.reload()
+
+    def make_tree(self):
+        self.tree = ttk.Treeview(self)
+        self.tree['height'] = const.VIEW_ROW_CNT
+        self.tree["column"] = list(const.DATA_FLAME_LAYOUT.keys())
+        self.tree["show"] = "headings"
+        [self.tree.heading(k, text=k) for k in const.DATA_FLAME_LAYOUT.keys()]
+        [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
+        self.tree.bind("<Double-1>", self.hyper_link)
+        self.tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_select(event))
 
     def hyper_link(self, event):
         webbrowser.open(self.link)
@@ -291,7 +295,7 @@ class MouseApp(tk.Frame):
             self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, new_open, heiten, sort_type, award, meiten, special
         )
-        self.lbl_title['text'] = f'食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "-"]["点数"].astype(float).mean())}点 ' \
+        self.lbl_title['text'] = f'{const.YEAR}年食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "0.00"]["点数"].astype(float).mean())}点 ' \
                                  f'口コミ数 {"{:,}".format(self.df_target["口コミ数"].astype(int).sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].astype(int).sum())}件'
         func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list])
 
