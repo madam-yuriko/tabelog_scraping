@@ -37,27 +37,10 @@ class MouseApp(tk.Frame):
         # データフレーム取得
         pd.set_option('display.max_rows', None)
         pd.set_option('display.max_columns', None)
-
-        print(f'--------{const.YEAR}年CSV読み込み開始-------')
-        df_all = pd.read_csv(const.get_csv_name(const.YEAR), encoding='utf-8', low_memory=False).fillna('')
-        print(f'--------{const.YEAR}年CSV読み込み完了-------', f'{time.time() - start_time}sec')
-        df_all['予算(夜)'] = df_all['予算(夜)'].replace(0, '-')
-        df_all['予算'] = df_all['予算(夜)'].apply(lambda x: const.YOSAN_LIST.get(x, 0))
-        print(f'--------{const.YEAR - 1}年CSV読み込み開始-------')
-        df_last_year = pd.read_csv(const.get_csv_name(const.YEAR - 1), usecols=['ID', 'ステータス', '点数', '口コミ数'], encoding='utf-8', low_memory=False).fillna('')
-        print(f'--------{const.YEAR - 1}年CSV読み込み完了-------', f'{time.time() - start_time}sec')
-        df_all = pd.merge(df_all, df_last_year, on='ID', how='left', indicator=True)
-        df_all.columns = const.MERGE_COL_NAMES
-        df_all['点数(増減)'] = (df_all['点数'].fillna(0).replace('', 0).astype(float) - df_all['点数(昨年)'].fillna(0).replace('', 0).astype(float))
-        df_all['口コミ数(増減)'] = (df_all['口コミ数'].fillna(0).replace('-', 0).astype(int) - df_all['口コミ数(昨年)'].fillna(0).replace('-', 0).astype(int))
-        df_all['ステータス'] = df_all[['ステータス', 'ステータス(昨年)']].apply(lambda x: '去年閉店' if x[0] in ['閉店', '移転', '休業', '掲載保留'] and x[1] == '' else x[0], axis=1)
-        df_all = df_all.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
-        index = df_all.reset_index().index
-        df_all['全国順位'] = [i+1 for i in index]
+        print('----------------Pickle読み込み----------------')
+        df_all = pd.read_pickle(const.INPUT_FILE_NAME)
         self.df_small = df_all
-
-        # 県別店数カウント
-        # print(df_all[df_all['ステータス'] == '']['都道府県'].value_counts())
+        print('----------------Pickle読み込み完了----------------')
 
         # ジャンル抽出
         const.GENRE_LIST = sorted(list(set(list(df_all['ジャンル1']) + list(df_all['ジャンル2']) + list(df_all['ジャンル3']))))
@@ -146,7 +129,7 @@ class MouseApp(tk.Frame):
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'shisetsu'))
         self.lbl_shisetsu = tk.Label(self, text='商業施設')
-        self.cmb_shisetsu = ttk.Combobox(self, width=24, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
+        self.cmb_shisetsu = ttk.Combobox(self, width=32, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
 
         # その他条件
         sv = tk.StringVar()
