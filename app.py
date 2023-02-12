@@ -10,6 +10,8 @@ from const import MAX_ROW_CNT
 
 # アプリの定義
 class MouseApp(tk.Frame):
+    start_flg = True
+
     # 初期化
     def __init__(self, master=None):
         self.link = ''
@@ -137,7 +139,7 @@ class MouseApp(tk.Frame):
         self.lbl_special = tk.Label(self, text='その他')
         self.cmb_special = ttk.Combobox(self, width=16, height=30, textvariable=sv, values=const.SPECIAL_LIST)
 
-        # ツリーレイアウト 
+        # ツリーレイアウト
         self.tree = None
         self.make_tree()
 
@@ -227,12 +229,18 @@ class MouseApp(tk.Frame):
         self.reload()
 
     def on_check_changed(self):
+        print('on_check_changed')
         self.reload()
 
     def on_select_changed(self):
+        print('on_select_changed')
+        if self.start_flg:
+            self.start_flg = False
+            return
         self.reload()
 
     def on_enter(self):
+        print('on_enter')
         self.reload()
 
     def all_reset(self):
@@ -244,9 +252,6 @@ class MouseApp(tk.Frame):
         self.txt_place_1.delete(0, tk.END)
         self.txt_place_2.delete(0, tk.END)
         self.txt_place_3.delete(0, tk.END)
-        self.cmb_award.set('')
-        self.cmb_meiten.set('')
-        self.reload()
 
     def reload(self):
         print('reload')
@@ -319,7 +324,7 @@ class MouseApp(tk.Frame):
         self.cmb_shisetsu.pack(side=tk.LEFT, after=self.lbl_shisetsu, anchor=tk.W, padx=5, pady=5)
         self.lbl_special.pack(side=tk.LEFT, after=self.cmb_shisetsu, anchor=tk.W, padx=5, pady=5)
         self.cmb_special.pack(side=tk.LEFT, after=self.lbl_special, anchor=tk.W, padx=5, pady=5)
-                 
+
 # アプリの実行
 f = MouseApp()
 f.pack()

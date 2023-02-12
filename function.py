@@ -23,7 +23,7 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
         df = df.sort_values(['口コミ数(増減)', '口コミ数', '点数', '保存件数'], ascending=False)
     else:
         df = df.sort_values(['保存件数', '点数', '口コミ数'], ascending=False)
-    
+
     df['エリア順位'] = pd.RangeIndex(start=1, stop=len(df.index) + 1, step=1)
 
     if shop_name:
@@ -72,7 +72,7 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
     df['点数'] = df['点数'].apply(lambda x: score(x))
     df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen_str(x))
     df['口コミ数(増減)'] = df['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
-        
+
     print('processing time:', time.time() - start_time)
     return df, df_total
 
@@ -99,7 +99,7 @@ def insert_tree(tree, df_target):
             row[12] = meiten_str[0:-2]
 
         tree.insert("", "end", tags=i, values=[i+1] + list(row[1:len(const.DATA_FLAME_LAYOUT)+1]))
-        
+
         # バックグラウンドカラー変更
         # 閉店他
         if row[3] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
@@ -124,7 +124,7 @@ def score_zougen_int(x):
         return x
 
 def score_zougen_str(x):
-    if x >= 1.00:
+    if x >= 2.00:
         return '-'
     elif x > 0:
         return f'+{x:.2f}'

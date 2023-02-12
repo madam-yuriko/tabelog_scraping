@@ -2,7 +2,7 @@ import pandas as pd
 import time
 import const
 
-YEAR = 2022
+YEAR = 2023
 INPUT_FILE_NAME = f'data_base_all_{YEAR}.csv'
 EXPORT_FILE_NAME = f'data_base_all_{YEAR}.pcl'
 INPUT_L_FILE_NAME = f'data_base_all_{YEAR - 1}.csv'
@@ -32,3 +32,24 @@ print('--------Merge DataFrame complete--------', f'{time.time() - start_time}se
 
 df_all.to_pickle(EXPORT_FILE_NAME)
 print('--------Export to pickle complete--------')
+
+import const
+import pandas as pd
+import os
+
+YEAR = 2023
+DIRNAME = f'{YEAR}_csv'
+if not os.path.exists(DIRNAME):
+    os.makedirs(DIRNAME)
+
+df_all = pd.read_pickle(f'data_base_all_{YEAR}.pcl')
+for i in const.TODOFUKEN_LIST:
+    df = df_all[df_all['都道府県'] == i]
+    df.to_pickle(f'{YEAR}_csv\data_base_{i}_{YEAR}.pcl')
+
+import const
+import pandas as pd
+import os
+YEAR = 2023
+df_all = pd.read_pickle(f'{YEAR}_csv\data_base_岡山県_{YEAR}.pcl')
+print(df_all)
