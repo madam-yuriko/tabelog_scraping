@@ -2,7 +2,6 @@ import const
 import re
 import time
 import pandas as pd
-from const import MAX_ROW_CNT
 
 
 def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_night_l='', yosan_night_h='', place1='', place2='', place3='', new_open=False, heiten=False, sort_type='', award='', meiten='', special=''):
@@ -86,6 +85,12 @@ def insert_tree(tree, df_target):
         # 一覧に入力
         award_str = ''
         row = list(row)
+        # 全国順位整数化
+        if pd.isna(row[1]):
+            row[1] = '-'
+        elif type(row[1]) == float:
+            row[1] = int(row[1])
+
         # 食べログアワード書き換え
         if type(row[11]) == str:
             for award in row[11].split('/'):
