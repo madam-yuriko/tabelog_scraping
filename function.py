@@ -68,6 +68,8 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
     df_total.loc['Total', '口コミ数(増減)'] = f'+{df["口コミ数(増減)"].sum()}'
     df_total.loc['Total', '保存件数'] = df['保存件数'].sum()
 
+    # 列加工
+    df['順位変動'] = df['順位変動'].apply(lambda x: rank_hendo(x))
     df['点数'] = df['点数'].apply(lambda x: score(x))
     df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen_str(x))
     df['口コミ数(増減)'] = df['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
@@ -86,39 +88,51 @@ def insert_tree(tree, df_target):
         award_str = ''
         row = list(row)
         # 全国順位整数化
-        if pd.isna(row[1]):
+        if row[1] == 'Total':
+            continue
+        elif pd.isna(row[1]):
             row[1] = '-'
+            row[2] = '-'
+        elif row[2][0] == '-' and int(row[1]) == int(row[2][1:]):
+            row[1] = int(row[1])
+            row[2] = '-'
         elif type(row[1]) == float:
             row[1] = int(row[1])
 
         # 食べログアワード書き換え
-        if type(row[11]) == str:
-            for award in row[11].split('/'):
+        if type(row[12]) == str:
+            for award in row[12].split('/'):
                 award_str += award[2:6].replace(' ', '') + '/'
             row[11] = award_str[0:-2]
         # 百名店書き換え
-        if type(row[12]) == str:
+        if type(row[13]) == str:
             meiten_str = re.sub(r'\d', '', row[12].split('/')[0]) + ' '
-            for meiten in row[12].split('/'):
+            for meiten in row[13].split('/'):
                 meiten_str += meiten[-2:] + '/'
-            row[12] = meiten_str[0:-2]
+            row[13] = meiten_str[0:-2]
 
         tree.insert("", "end", tags=i, values=[i+1] + list(row[1:len(const.DATA_FLAME_LAYOUT)+1]))
 
         # バックグラウンドカラー変更
         # 閉店他
-        if row[3] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
+        if row[4] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
             tree.tag_configure(i, background="#cccccc")
         elif i % 2 == 0:
             tree.tag_configure(i, background="#ffffff")
         elif i % 2 == 1:
             tree.tag_configure(i, background="#d6f3ff")
         # 新店
-        if row[24] == 'left_only':
+        if row[25] == 'left_only':
             tree.tag_configure(i, background="#f0e68c")
 
 
 # 列加工
+def rank_hendo(x):
+    if x > 0:
+        return f'+{x}'
+    else:
+        return f'{x}'
+
 def score(x):
     return f'{x:.2f}'
 
