@@ -99,15 +99,11 @@ class MouseApp(tk.Frame):
         self.txt_place_3 = tk.Entry(self, width=20)
         self.txt_place_3.bind('<Return>', lambda event, df=df_all: self.on_enter())
 
-        # 新規オープン
-        self.bv3 = tk.BooleanVar()
-        self.bv3.trace("w", lambda name, index, mode, bv=self.bv3, df=df_all: self.on_check_changed())
-        self.chk_new = tk.Checkbutton(self, variable=self.bv3, text='新規オープン')
-
-        # 閉店・移転
-        self.bv2 = tk.BooleanVar()
-        self.bv2.trace("w", lambda name, index, mode, bv=self.bv2, df=df_all: self.on_check_changed())
-        self.chk_heiten = tk.Checkbutton(self, variable=self.bv2, text='閉店/移転/休業/掲載保留を含む')
+        # 営業状況
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
+        self.lbl_buisiness_status = tk.Label(self, text='営業状況')
+        self.cmb_buisiness_status = ttk.Combobox(self, width=14, textvariable=sv, height=30, values=const.BUSINESS_STATUS_LIST)
 
         # ソート種別
         sv = tk.StringVar()
@@ -153,6 +149,7 @@ class MouseApp(tk.Frame):
         self.widget()
 
         # 初期値
+        self.cmb_buisiness_status.current(0)
         self.cmb_sort_type.current(0)
 
         # ★バグ対応を処理
@@ -268,20 +265,19 @@ class MouseApp(tk.Frame):
         place1 = self.txt_place_1.get()
         place2 = self.txt_place_2.get()
         place3 = self.txt_place_3.get()
-        new_open = self.bv3.get()
-        heiten = self.bv2.get()
+        business_status = self.cmb_buisiness_status.get()
         sort_type = self.cmb_sort_type.get()
         award = self.cmb_award.get()
         meiten = self.cmb_meiten.get()
         special = self.cmb_special.get()
         if tdfkn not in const.TODOFUKEN_LIST:
             return
-        print(f'{area} {tdfkn} {score_condition} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {new_open} {heiten} {sort_type} {award} {meiten} {special}')
+        print(f'{area} {tdfkn} {score_condition} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {business_status} {sort_type} {award} {meiten} {special}')
         header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
         header_list.remove('No')
         self.df_target, df_total = func.processing_data_frame(
             self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
-            place1, place2, place3, new_open, heiten, sort_type, award, meiten, special
+            place1, place2, place3, business_status, sort_type, award, meiten, special
         )
         self.lbl_title['text'] = f'{const.YEAR}年食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "0.00"]["点数"].astype(float).mean())}点 ' \
                                  f'口コミ数 {"{:,}".format(self.df_target["口コミ数"].astype(int).sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].astype(int).sum())}件'
@@ -312,9 +308,9 @@ class MouseApp(tk.Frame):
         self.txt_place_2.pack(side=tk.LEFT, after=self.lbl_place_2, anchor=tk.W, padx=5, pady=5)
         self.lbl_place_3.pack(side=tk.LEFT, after=self.txt_place_2, anchor=tk.W, padx=5, pady=5)
         self.txt_place_3.pack(side=tk.LEFT, after=self.lbl_place_3, anchor=tk.W, padx=5, pady=5)
-        self.chk_new.pack(side=tk.LEFT, after=self.txt_place_3, anchor=tk.W, padx=5, pady=5)
-        self.chk_heiten.pack(side=tk.LEFT, after=self.chk_new, anchor=tk.W, padx=5, pady=5)
-        self.lbl_sort_type.pack(side=tk.LEFT, after=self.chk_heiten, anchor=tk.W, padx=5, pady=5)
+        self.lbl_buisiness_status.pack(side=tk.LEFT, after=self.txt_place_3, anchor=tk.W, padx=5, pady=5)
+        self.cmb_buisiness_status.pack(side=tk.LEFT, after=self.lbl_buisiness_status, anchor=tk.W, padx=5, pady=5)
+        self.lbl_sort_type.pack(side=tk.LEFT, after=self.cmb_buisiness_status, anchor=tk.W, padx=5, pady=5)
         self.cmb_sort_type.pack(side=tk.LEFT, after=self.lbl_sort_type, anchor=tk.W, padx=5, pady=5)
         self.lbl_award.pack(side=tk.LEFT, after=self.cmb_sort_type, anchor=tk.W, padx=5, pady=5)
         self.cmb_award.pack(side=tk.LEFT, after=self.lbl_award, anchor=tk.W, padx=5, pady=5)
