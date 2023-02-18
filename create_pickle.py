@@ -10,6 +10,26 @@ INPUT_FILE_NAME = f'data_base_all_{YEAR}.csv'
 EXPORT_FILE_NAME = f'data_base_all_{YEAR}.pcl'
 INPUT_L_FILE_NAME = f'data_base_all_{YEAR - 1}.csv'
 
+def rank_hendo(x):
+    if x > 0:
+        return f'+{x}'
+    else:
+        return f'{x}'
+
+def score(x):
+    return f'{x:.2f}'
+
+def score_zougen(x):
+    if x >= 2.00:
+        return '-'
+    elif x > 0:
+        return f'+{x:.2f}'
+    else:
+        return f'{x:.2f}'
+
+def kutchikomi_zougen(x):
+    return f'+{x}' if x > 0 else str(x)
+
 start_time = time.time()
 
 print(f'--------{YEAR} year csv file read start-------')
@@ -38,6 +58,11 @@ df_rank.reset_index(inplace=True, drop=True)
 df_rank['全国順位'] = df_rank.index + 1
 df_all = pd.merge(df_all, df_rank[['ID', '全国順位']], on='ID', how='left')
 df_all['順位変動'] = (df_all['全国順位(昨年)'].fillna(0).replace('', 0).astype(int) - df_all['全国順位'].fillna(0).replace('', 0).astype(int))
+# 加工
+df_all['順位変動_str'] = df_all['順位変動'].apply(lambda x: rank_hendo(x))
+df_all['点数_str'] = df_all['点数'].apply(lambda x: score(x))
+df_all['点数(増減)_str'] = df_all['点数(増減)'].apply(lambda x: score_zougen(x))
+df_all['口コミ数(増減)_str'] = df_all['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
 print('--------Merge DataFrame complete--------', f'{time.time() - start_time}sec')
 
 df_all.to_pickle(EXPORT_FILE_NAME)
@@ -54,8 +79,10 @@ if not os.path.exists(DIRNAME):
 
 df_all = pd.read_pickle(f'data_base_all_{YEAR}.pcl')
 for i in const.TODOFUKEN_LIST:
-    df = df_all[df_all['都道府県'] == i]
-    df.to_pickle(f'{YEAR}_csv\data_base_{i}_{YEAR}.pcl')
+    if i:
+        df = df_all[df_all['都道府県'] == i]
+        df.to_pickle(f'{YEAR}_pcl\data_base_{i}_{YEAR}.pcl')
+print('--------Export to all pickle complete--------')
 
 import const
 import pandas as pd

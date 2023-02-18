@@ -164,7 +164,7 @@ class MouseApp(tk.Frame):
         self.tree['height'] = const.VIEW_ROW_CNT
         self.tree["column"] = list(const.DATA_FLAME_LAYOUT.keys())
         self.tree["show"] = "headings"
-        [self.tree.heading(k, text=k) for k in const.DATA_FLAME_LAYOUT.keys()]
+        [self.tree.heading(k, text=k.replace('_str', '')) for k in const.DATA_FLAME_LAYOUT.keys()]
         [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
         self.tree.bind("<Double-1>", self.hyper_link)
         self.tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_select(event))
@@ -214,7 +214,8 @@ class MouseApp(tk.Frame):
             self.cmb_tdfkn['values'] = const.TODOFUKEN_LIST
 
         if tdfkn:
-            df_temp = df_temp[df_temp.都道府県.str.contains(tdfkn)]
+            # df_temp = df_temp[df_temp.都道府県.str.contains(tdfkn)]
+            df_temp = pd.read_pickle(f'{const.YEAR}_pcl\data_base_{tdfkn}_{const.YEAR}.pcl')
 
         if score_condition:
             if score_condition == '3.00未満':
@@ -273,7 +274,7 @@ class MouseApp(tk.Frame):
         if tdfkn not in const.TODOFUKEN_LIST:
             return
         print(f'{area} {tdfkn} {score_condition} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {business_status} {sort_type} {award} {meiten} {special}')
-        header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL']+['_merge']
+        header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL'] + ['順位変動_str'] + ['点数_str'] + ['点数(増減)_str'] + ['口コミ数(増減)_str'] + ['_merge']
         header_list.remove('No')
         self.df_target, df_total = func.processing_data_frame(
             self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 

@@ -53,7 +53,7 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
         df = df[df.百名店.str.contains(meiten)]
 
     if special:
-        if special == '県別トップ':  
+        if special == '県別トップ':
             df['order'] = df['都道府県'].apply(lambda x: const.TODOFUKEN_LIST.index(x))
             df = df.sort_values(['order', '点数', '口コミ数', '保存件数'])
             df = df[~df.duplicated(subset=['order'], keep='last')]
@@ -62,23 +62,15 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
             df = df.sort_values(['order', '点数', '口コミ数', '保存件数'])
             df = df[~df.duplicated(subset=['order'], keep='last')]
             df = df.sort_values(['点数', '口コミ数', '保存件数'], ascending=False)
-
     df_total = pd.DataFrame(columns=df.columns)
     df_total.loc['Total'] = ''
     df_total.loc['Total', '全国順位'] = 'Total'
-    df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen_int(x))
-    score_zougen = df[df['点数(増減)'] != '-']['点数(増減)'].sum()
+    score_zougen = df[df['点数(増減)_str'] != '-']['点数(増減)'].sum()
     score_zougen = f'+{score_zougen:.2f}' if score_zougen > 0 else f'{score_zougen:.2f}'
-    df_total.loc['Total', '点数(増減)'] = score_zougen
+    df_total.loc['Total', '点数(増減)_str'] = score_zougen
     df_total.loc['Total', '口コミ数'] = df['口コミ数'].sum()
-    df_total.loc['Total', '口コミ数(増減)'] = f'+{df["口コミ数(増減)"].sum()}'
+    df_total.loc['Total', '口コミ数(増減)_str'] = f'+{df["口コミ数(増減)"].sum()}'
     df_total.loc['Total', '保存件数'] = df['保存件数'].sum()
-
-    # 列加工
-    df['順位変動'] = df['順位変動'].apply(lambda x: rank_hendo(x))
-    df['点数'] = df['点数'].apply(lambda x: score(x))
-    df['点数(増減)'] = df['点数(増減)'].apply(lambda x: score_zougen_str(x))
-    df['口コミ数(増減)'] = df['口コミ数(増減)'].apply(lambda x: kutchikomi_zougen(x))
 
     print('processing time:', time.time() - start_time)
     return df, df_total
@@ -95,7 +87,7 @@ def insert_tree(tree, df_target):
         row = list(row)
         # 全国順位整数化
         col_1 = list(const.DATA_FLAME_LAYOUT.keys()).index('全国順位')
-        col_2 = list(const.DATA_FLAME_LAYOUT.keys()).index('順位変動')
+        col_2 = len(row) - 5
         if row[col_1] == 'Total':
             pass
         elif pd.isna(row[col_1]):
@@ -133,32 +125,3 @@ def insert_tree(tree, df_target):
         col = len(const.DATA_FLAME_LAYOUT) + 1
         if row[25] == 'left_only':
             tree.tag_configure(i, background="#f0e68c")
-
-
-# 列加工
-def rank_hendo(x):
-    if x > 0:
-        return f'+{x}'
-    else:
-        return f'{x}'
-
-def score(x):
-    return f'{x:.2f}'
-
-def score_zougen_int(x):
-    if x >= 1.00:
-        return 0
-    else:
-        return x
-
-def score_zougen_str(x):
-    if x >= 2.00:
-        return '-'
-    elif x > 0:
-        return f'+{x:.2f}'
-    else:
-        return f'{x:.2f}'
-
-def kutchikomi_zougen(x):
-    return f'+{x}' if x > 0 else str(x)
-
