@@ -86,8 +86,8 @@ def insert_tree(tree, df_target):
         award_str = ''
         row = list(row)
         # 全国順位整数化
-        col_1 = list(const.DATA_FLAME_LAYOUT.keys()).index('全国順位')
-        col_2 = len(row) - 5
+        col_1 = list(df_target.columns).index('全国順位') + 1
+        col_2 = list(df_target.columns).index('順位変動_str') + 1
         if row[col_1] == 'Total':
             pass
         elif pd.isna(row[col_1]):
@@ -99,12 +99,12 @@ def insert_tree(tree, df_target):
         elif type(row[col_1]) == float:
             row[col_1] = int(row[col_1])
         # 食べログアワード書き換え
-        col = list(const.DATA_FLAME_LAYOUT.keys()).index('食べログアワード')
+        col = list(df_target.columns).index('食べログアワード') + 1
         for award in row[col].split('/'):
             award_str += award[2:6].replace(' ', '') + '/'
         row[col] = award_str[0:-2]
         # 百名店書き換え
-        col = list(const.DATA_FLAME_LAYOUT.keys()).index('百名店')
+        col = list(df_target.columns).index('百名店') + 1
         meiten_str = re.sub(r'\d', '', row[col].split('/')[0]) + ' '
         for meiten in row[col].split('/'):
             meiten_str += meiten[-2:] + '/'
@@ -114,7 +114,7 @@ def insert_tree(tree, df_target):
 
         # バックグラウンドカラー変更
         # 閉店他
-        col = list(const.DATA_FLAME_LAYOUT.keys()).index('ステータス')
+        col = list(df_target.columns).index('ステータス') + 1
         if row[col] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
             tree.tag_configure(i, background="#cccccc")
         elif i % 2 == 0:
@@ -122,6 +122,6 @@ def insert_tree(tree, df_target):
         elif i % 2 == 1:
             tree.tag_configure(i, background="#d6f3ff")
         # 新店
-        col = len(const.DATA_FLAME_LAYOUT) + 1
-        if row[25] == 'left_only':
+        col = list(df_target.columns).index('_merge') + 1
+        if row[col] == 'left_only':
             tree.tag_configure(i, background="#f0e68c")
