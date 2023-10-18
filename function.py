@@ -10,10 +10,12 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
     if business_status == const.BUSINESS_STATUS_LIST[0]:
         df = df[~df.ステータス.isin(['閉店', '移転', '休業', '掲載保留'])]
     elif business_status == const.BUSINESS_STATUS_LIST[1]:
-        df = df[df._merge == 'left_only']
+        df = df[~df.ステータス.isin(['閉店', '移転', '休業', '掲載保留', '去年閉店'])]
     elif business_status == const.BUSINESS_STATUS_LIST[2]:
-        df = df[df['ステータス'] == '去年閉店']
+        df = df[df._merge == 'left_only']
     elif business_status == const.BUSINESS_STATUS_LIST[3]:
+        df = df[df.ステータス == '去年閉店']
+    elif business_status == const.BUSINESS_STATUS_LIST[4]:
         pass
 
     if sort_type == const.SORT_TYPE_LIST[0]:
@@ -55,10 +57,31 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
         df = df[df.百名店.str.contains(meiten)]
 
     if special:
-        if special == '県別トップ':
+        if special == '県別表示':
             df['order'] = df['都道府県'].apply(lambda x: const.TODOFUKEN_LIST.index(x))
-            df = df.sort_values(['order', '点数', '口コミ数', '保存件数'])
-            df = df[~df.duplicated(subset=['order'], keep='last')]
+            df = df.sort_values(['order', '点数', '口コミ数', '保存件数'], ascending=[True, False, False, False])
+            store_count = df.groupby('都道府県', sort=False).size().reset_index(name='店舗数')
+            rows = []
+            for index, row in store_count.iterrows():
+                rows.extend(df[df['都道府県'] == row['都道府県']].to_dict('records'))
+                stats_row = {col: '' for col in df.columns}
+                stats_row['店名'] = f"店舗数: {row['店舗数']}"
+                stats_row['都道府県'] = row['都道府県']
+                rows.append(stats_row)
+            df = pd.DataFrame(rows).fillna('')
+        elif special == '県別店舗数':
+            store_count = df.groupby('都道府県', sort=False).size().reset_index(name='店舗数')
+            todofuken_df = pd.DataFrame({'都道府県': const.TODOFUKEN_LIST[1:]})
+            result_df  = pd.merge(todofuken_df, store_count, on='都道府県', how='left').fillna(0)
+            result_df['店舗数'] = result_df['店舗数'].astype(int)
+            result_df = result_df.sort_values(['店舗数'], ascending=[False])
+            rows = []
+            for index, row in result_df.iterrows():
+                stats_row = {col: '' for col in df.columns}
+                stats_row['店名'] = f"店舗数: {row['店舗数']}"
+                stats_row['都道府県'] = row['都道府県']
+                rows.append(stats_row)
+            df = pd.DataFrame(rows).fillna('')
         elif special == 'ジャンル別トップ':
             df['order'] = df['ジャンル1'].apply(lambda x: const.GENRE_LIST.index(x))
             df = df.sort_values(['order', '点数', '口コミ数', '保存件数'])
@@ -67,18 +90,23 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
     df_total = pd.DataFrame(columns=df.columns)
     df_total.loc['Total'] = ''
     df_total.loc['Total', '全国順位'] = 'Total'
-    score_zougen = df[df['点数(増減)_str'] != '-']['点数(増減)'].sum()
-    score_zougen = f'+{score_zougen:.2f}' if score_zougen > 0 else f'{score_zougen:.2f}'
-    df_total.loc['Total', '点数(増減)_str'] = score_zougen
-    df_total.loc['Total', '口コミ数'] = df['口コミ数'].sum()
-    df_total.loc['Total', '口コミ数(増減)_str'] = f'+{df["口コミ数(増減)"].sum()}'
-    df_total.loc['Total', '保存件数'] = df['保存件数'].sum()
+    if special not in ('県別表示', '県別店舗数'):
+        score_zougen = df[df['点数(増減)_str'] != '-']['点数(増減)'].sum()
+        score_zougen = f'+{score_zougen:.2f}' if score_zougen > 0 else f'{score_zougen:.2f}'
+    if special in ('県別表示', '県別店舗数'):
+        df_total.loc['Total', '店名'] = f"店舗数: {store_count['店舗数'].sum()}"
+    else:
+        df_total.loc['Total', '点数(増減)_str'] = '-' if special in ('県別表示', '県別店舗数') else score_zougen
+        df_total.loc['Total', '口コミ数'] = '-' if special in ('県別表示', '県別店舗数') else df['口コミ数'].sum()
+        df_total.loc['Total', '口コミ数(増減)_str'] = '-' if special in ('県別表示', '県別店舗数') else f'+{df["口コミ数(増減)"].sum()}'
+        df_total.loc['Total', '保存件数'] = '-' if special in ('県別表示', '県別店舗数') else df['保存件数'].sum()
+    
 
     print('processing time:', time.time() - start_time)
     return df, df_total
 
 
-def insert_tree(tree, df_target):
+def insert_tree(tree, df_target, special):
     # ツリーを全削除
     for i in tree.get_children():
         tree.delete(i)
@@ -90,7 +118,7 @@ def insert_tree(tree, df_target):
         # 全国順位整数化
         col_1 = list(df_target.columns).index('全国順位') + 1
         col_2 = list(df_target.columns).index('順位変動_str') + 1
-        if row[col_1] == 'Total':
+        if row[col_1] == 'Total' or special in ('県別表示', '県別店舗数'):
             pass
         elif pd.isna(row[col_1]):
             row[col_1] = '-'

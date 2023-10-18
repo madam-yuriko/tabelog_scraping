@@ -77,7 +77,7 @@ class MouseApp(tk.Frame):
 
         # ジャンル1のみ
         self.bv1 = tk.BooleanVar()
-        self.bv1.trace("w", lambda name, index, mode, bv=self.bv1, df=df_all: self.on_text_changed(df_all))
+        self.bv1.trace("w", lambda name, index, mode, bv=self.bv1, df=df_all: self.on_enter())
         self.chk_only_genre1 = tk.Checkbutton(self, variable=self.bv1, text='ジャンル1のみ')
 
         # 予算(夜)
@@ -280,9 +280,12 @@ class MouseApp(tk.Frame):
             self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, business_status, sort_type, award, meiten, special
         )
-        self.lbl_title['text'] = f'{const.YEAR}年食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "0.00"]["点数"].astype(float).mean())}点 ' \
-                                 f'口コミ数 {"{:,}".format(self.df_target["口コミ数"].astype(int).sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].astype(int).sum())}件'
-        func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list])
+        if special not in ('県別表示', '県別店舗数'):
+            self.lbl_title['text'] = f'{const.YEAR}年食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "0.00"]["点数"].astype(float).mean())}点 ' \
+                                    f'口コミ数 {"{:,}".format(self.df_target["口コミ数"].astype(int).sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].astype(int).sum())}件'
+            func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list], special)
+        else:
+            func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list], special)
 
     def widget(self):
         # ウィジェット配置
