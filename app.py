@@ -89,7 +89,7 @@ class MouseApp(tk.Frame):
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
         self.lbl_yosan_night_h = tk.Label(self, text='上限')
-        self.cmb_yosan_night_h = ttk.Combobox(self, width=10, textvariable=sv, height=30, values=const.YOSAN_LIST_L)
+        self.cmb_yosan_night_h = ttk.Combobox(self, width=10, textvariable=sv, height=30, values=const.YOSAN_LIST_H)
 
         # 所在地、施設名、最寄り駅
         self.lbl_place_1 = tk.Label(self, text='場所1')
