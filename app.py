@@ -81,12 +81,15 @@ class MouseApp(tk.Frame):
         self.chk_only_genre1 = tk.Checkbutton(self, variable=self.bv1, text='ジャンル1のみ')
 
         # 予算(夜)
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
         self.lbl_yosan_night_l = tk.Label(self, text='予算(夜) 下限')
-        self.cmb_yosan_night_l = ttk.Combobox(self, width=10, height=30, values=const.YOSAN_LIST_L)
-        self.cmb_yosan_night_l.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.cmb_yosan_night_l = ttk.Combobox(self, width=10, textvariable=sv, height=30, values=const.YOSAN_LIST_L)
+        
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
         self.lbl_yosan_night_h = tk.Label(self, text='上限')
-        self.cmb_yosan_night_h = ttk.Combobox(self, width=10, height=30, values=const.YOSAN_LIST_H)
-        self.cmb_yosan_night_h.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.cmb_yosan_night_h = ttk.Combobox(self, width=10, textvariable=sv, height=30, values=const.YOSAN_LIST_L)
 
         # 所在地、施設名、最寄り駅
         self.lbl_place_1 = tk.Label(self, text='場所1')
@@ -128,6 +131,12 @@ class MouseApp(tk.Frame):
         sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'shisetsu'))
         self.lbl_shisetsu = tk.Label(self, text='商業施設')
         self.cmb_shisetsu = ttk.Combobox(self, width=32, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
+        
+        # テーマ別
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'theme'))
+        self.lbl_theme = tk.Label(self, text='テーマ別')
+        self.cmb_theme = ttk.Combobox(self, width=16, textvariable=sv, height=30, values=list(const.THEME_DICT.keys()))
 
         # その他条件
         sv = tk.StringVar()
@@ -184,6 +193,7 @@ class MouseApp(tk.Frame):
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
         shisetsu = self.cmb_shisetsu.get()
+        theme = self.cmb_theme.get()
         score_condition = self.cmb_score_condition.get()
 
         if shisetsu and name == 'shisetsu':
@@ -197,13 +207,21 @@ class MouseApp(tk.Frame):
                     tdfkn = self.cmb_tdfkn.get()
                     if tdfkn != v:
                         self.cmb_tdfkn.set(v)
-                        tdfkn = v
                 elif k == '場所1':
                     self.txt_place_1.insert(tk.END, v)
                 elif k == '場所2':
                     self.txt_place_2.insert(tk.END, v)
                 elif k == '場所3':
                     self.txt_place_3.insert(tk.END, v)
+        elif theme and name == 'theme':
+            theme = const.THEME_DICT[self.cmb_theme.get()]
+            for k, v in theme.items():
+                if k == '店名':
+                    self.txt_shop_name.insert(tk.END, v)
+                elif k == 'ジャンル':
+                    genre = self.cmb_genre.get()
+                    if genre != v:
+                        self.cmb_genre.set(v)
         else:
             self.all_reset()
 
@@ -322,7 +340,9 @@ class MouseApp(tk.Frame):
         self.cmb_meiten.pack(side=tk.LEFT, after=self.lbl_meiten, anchor=tk.W, padx=5, pady=5)
         self.lbl_shisetsu.pack(side=tk.LEFT, after=self.cmb_meiten, anchor=tk.W, padx=5, pady=5)
         self.cmb_shisetsu.pack(side=tk.LEFT, after=self.lbl_shisetsu, anchor=tk.W, padx=5, pady=5)
-        self.lbl_special.pack(side=tk.LEFT, after=self.cmb_shisetsu, anchor=tk.W, padx=5, pady=5)
+        self.lbl_theme.pack(side=tk.LEFT, after=self.cmb_shisetsu, anchor=tk.W, padx=5, pady=5)
+        self.cmb_theme.pack(side=tk.LEFT, after=self.lbl_theme, anchor=tk.W, padx=5, pady=5)
+        self.lbl_special.pack(side=tk.LEFT, after=self.cmb_theme, anchor=tk.W, padx=5, pady=5)
         self.cmb_special.pack(side=tk.LEFT, after=self.lbl_special, anchor=tk.W, padx=5, pady=5)
 
 # アプリの実行
