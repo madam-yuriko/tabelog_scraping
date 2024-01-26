@@ -79,9 +79,10 @@ def extraction(response, store_id, url, year):
                 else:
                     value = jaconv.z2h(value, kana=False, digit=True, ascii=True).replace('~', '～').replace(',', '').replace('\n', '').strip()
 
+            df[key] = pd.Series(dtype='str')
             df.loc[store_id, key] = value
         except Exception:
-            # print(key, sys.exc_info())
+            df[key] = pd.Series(dtype='str')
             df.loc[store_id, key] = ''
             continue
     write_csv(df)
@@ -98,8 +99,8 @@ def preprocessing(year):
     print(f'All store id count: {all_id_count}')
 
     exist_id_set = set()
-    if os.path.isfile(const.get_csv_name(const.YEAR)):
-        df_exist = pd.read_csv(const.get_csv_name(const.YEAR), encoding='utf-8', usecols=[0], dtype={'ID': str}, low_memory=False)
+    if os.path.isfile(f'data_base_all_{const.YEAR}.csv'):
+        df_exist = pd.read_csv(f'data_base_all_{const.YEAR}.csv', encoding='utf-8', usecols=[0], dtype={'ID': str}, low_memory=False)
         exist_id_set = set(df_exist['ID'].astype(str).tolist())
     exist_count = len(exist_id_set)
     with open(f'count.binaryfile', mode='wb') as f:
@@ -113,10 +114,10 @@ def preprocessing(year):
 
 @fasteners.interprocess_locked(f'lock_file_c')
 def write_csv(df):
-    if os.path.isfile(const.get_csv_name(const.YEAR)):
-        df.to_csv(const.get_csv_name(const.YEAR), mode='a', header=None)
+    if os.path.isfile(f'data_base_all_{const.YEAR}.csv'):
+        df.to_csv(f'data_base_all_{const.YEAR}.csv', mode='a', header=None)
     else:
-        df.to_csv(const.get_csv_name(const.YEAR), mode='a', header=True, index_label='ID')
+        df.to_csv(f'data_base_all_{const.YEAR}.csv', mode='a', header=True, index_label='ID')
 
 
 @fasteners.interprocess_locked(f'lock_file_p')

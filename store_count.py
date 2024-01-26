@@ -22,6 +22,11 @@ def main(args):
     last_store = {}
     for id in exist_id['ID'].tolist():
         last_store[id[:2]] = id
+    last_store['13'] = '13292033' # 東京
+    last_store['23'] = '23087401' # 神奈川
+    last_store['27'] = '27140314' # 大阪
+    last_store['28'] = '28068879' # 神戸
+    last_store['47'] = '47031400' # 沖縄
     print('last_store', last_store)
 
     # 最終店舗の次の店舗からHTTPリクエストして本年の最終店舗を探索

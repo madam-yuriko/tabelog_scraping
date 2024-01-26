@@ -5,7 +5,7 @@ import const
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 
-YEAR = 2023
+YEAR = 2024
 INPUT_FILE_NAME = f'data_base_all_{YEAR}.csv'
 EXPORT_FILE_NAME = f'data_base_all_{YEAR}.pcl'
 INPUT_L_FILE_NAME = f'data_base_all_{YEAR - 1}.csv'
@@ -72,7 +72,7 @@ import const
 import pandas as pd
 import os
 
-YEAR = 2023
+YEAR = 2024
 DIRNAME = f'{YEAR}_csv'
 if not os.path.exists(DIRNAME):
     os.makedirs(DIRNAME)
@@ -87,6 +87,6 @@ print('--------Export to all pickle complete--------')
 import const
 import pandas as pd
 import os
-YEAR = 2023
+YEAR = 2024
 df_all = pd.read_pickle(f'{YEAR}_csv\data_base_岡山県_{YEAR}.pcl')
 print(df_all)

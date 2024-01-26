@@ -1,6 +1,6 @@
 import tkinter as tk
 
-YEAR = 2023
+YEAR = 2024
 
 INPUT_FILE_NAME = f'data_base_all_{YEAR}.pcl'
 

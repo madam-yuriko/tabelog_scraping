@@ -21,6 +21,9 @@ def main(args):
     # 各プロセスに分割
     id_list_split = np.array_split(remaining_id_list, process)
 
+    # シングルプロセスで動かす(エラーがわからない時)
+    # request(year, '01', id_list_split[0], all_id_count)
+    
     try:
         with concurrent.futures.ProcessPoolExecutor(max_workers=process) as executor:
             # マルチプロセス
