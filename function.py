@@ -12,7 +12,7 @@ def processing_data_frame(df, shop_name='', genre='', only_genre1=False, yosan_n
     elif business_status == const.BUSINESS_STATUS_LIST[1]:
         df = df[~df.ステータス.isin(['閉店', '移転', '休業', '掲載保留', '去年閉店'])]
     elif business_status == const.BUSINESS_STATUS_LIST[2]:
-        df = df[df._merge == 'left_only']
+        df = df[df.indicator_1 == 'left_only']
     elif business_status == const.BUSINESS_STATUS_LIST[3]:
         df = df[df.ステータス == '去年閉店']
     elif business_status == const.BUSINESS_STATUS_LIST[4]:
@@ -152,6 +152,9 @@ def insert_tree(tree, df_target, special):
         elif i % 2 == 1:
             tree.tag_configure(i, background="#d6f3ff")
         # 新店
-        col = list(df_target.columns).index('_merge') + 1
-        if row[col] == 'left_only':
+        col_1 = list(df_target.columns).index('indicator_1') + 1
+        col_2 = list(df_target.columns).index('indicator_2') + 1
+        if row[col_1] == 'left_only':
+            tree.tag_configure(i, background="#ffb993")
+        elif row[col_2] == 'left_only':
             tree.tag_configure(i, background="#f0e68c")

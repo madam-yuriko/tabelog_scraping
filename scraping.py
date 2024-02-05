@@ -53,6 +53,7 @@ def request(year, p_id, id_list, all_id_count):
         count = ipfunc.add_count()
         print(f'Process ID:{p_id} progress:{count} / {all_id_count} status:{response.status_code}\r', end="")
         if response.status_code != 200:
+            ipfunc.write_error_id_list(store_id)
             continue
         # 店舗ごとに処理
         ipfunc.extraction(response, store_id, url, year)

@@ -7,6 +7,7 @@ import jaconv
 import pandas as pd
 import fasteners
 import pickle
+import csv
 
 global exist_count
 
@@ -15,8 +16,7 @@ def extraction(response, store_id, url, year):
     soup = BeautifulSoup(response.text, "html.parser")
     for key, selector in const.SELECTOR_DIC.items():
         elems_address = soup.find_all('p', class_='rstinfo-table__address')
-        elems_price = soup.find_all('span', class_='rdheader-budget__price')
-        elems_price_r = soup.find_all('em', class_='gly-b-dinner')
+        elems_price = soup.find_all('a', class_='rdheader-budget__price-target')
         elems_award = soup.find_all('div', class_='rstinfo-table-badge-award')
         if key in ['説明', '説明詳細']:
             elsms_attr = soup.find_all(selector[0], class_=selector[1])
@@ -102,12 +102,14 @@ def preprocessing(year):
     if os.path.isfile(f'data_base_all_{const.YEAR}.csv'):
         df_exist = pd.read_csv(f'data_base_all_{const.YEAR}.csv', encoding='utf-8', usecols=[0], dtype={'ID': str}, low_memory=False)
         exist_id_set = set(df_exist['ID'].astype(str).tolist())
-    exist_count = len(exist_id_set)
+    completed_id_set = exist_id_set | read_error_id_list()
+    
+    completed_id_count = len(completed_id_set)
     with open(f'count.binaryfile', mode='wb') as f:
-        pickle.dump(exist_count , f)
+        pickle.dump(completed_id_count , f)
 
-    remaining_id_list = list(all_id_set - exist_id_set)
-    print('remaining_id_set', len(remaining_id_list))
+    remaining_id_list = list(all_id_set - completed_id_set)
+    print('remaining id count', len(remaining_id_list))
 
     return all_id_count, remaining_id_list
 
@@ -118,6 +120,24 @@ def write_csv(df):
         df.to_csv(f'data_base_all_{const.YEAR}.csv', mode='a', header=None)
     else:
         df.to_csv(f'data_base_all_{const.YEAR}.csv', mode='a', header=True, index_label='ID')
+        
+
+@fasteners.interprocess_locked(f'lock_file_e')
+def write_error_id_list(store_id):
+    with open('error_store_id_list.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([store_id])
+        
+        
+def read_error_id_list():
+    if os.path.exists('error_store_id_list.csv'):
+        df = pd.read_csv(f'error_store_id_list.csv', header=None)
+        id_list = df.iloc[:, 0].tolist()
+        formatted_list = [f'{id:08}' for id in id_list]
+
+        return set(formatted_list)
+    else:
+        return set()
 
 
 @fasteners.interprocess_locked(f'lock_file_p')
