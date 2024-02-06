@@ -143,18 +143,19 @@ def insert_tree(tree, df_target, special):
         tree.insert("", "end", tags=i, values=[i+1] + list(row[1:len(const.DATA_FLAME_LAYOUT)+1]))
 
         # バックグラウンドカラー変更
-        # 閉店他
-        col = list(df_target.columns).index('ステータス') + 1
-        if row[col] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
+        # 閉店、新規店他
+        col_1 = list(df_target.columns).index('ステータス') + 1
+        col_2 = list(df_target.columns).index('indicator_1') + 1
+        col_3 = list(df_target.columns).index('indicator_2') + 1
+        if row[col_1] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
             tree.tag_configure(i, background="#cccccc")
+        elif row[col_2] == 'left_only':
+            tree.tag_configure(i, background="#ffb993")
+        elif row[col_3] == 'left_only':
+            tree.tag_configure(i, background="#f0e68c")
         elif i % 2 == 0:
             tree.tag_configure(i, background="#ffffff")
         elif i % 2 == 1:
             tree.tag_configure(i, background="#d6f3ff")
-        # 新店
-        col_1 = list(df_target.columns).index('indicator_1') + 1
-        col_2 = list(df_target.columns).index('indicator_2') + 1
-        if row[col_1] == 'left_only':
-            tree.tag_configure(i, background="#ffb993")
-        elif row[col_2] == 'left_only':
-            tree.tag_configure(i, background="#f0e68c")
+        
+        

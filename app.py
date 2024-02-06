@@ -237,7 +237,6 @@ class MouseApp(tk.Frame):
 
         if tdfkn:
             df_temp = df_temp[df_temp.都道府県 == tdfkn]
-            # df_temp = pd.read_pickle(f'{const.YEAR}_pcl\data_base_{tdfkn}_{const.YEAR}.pcl')
 
         if score_condition:
             if score_condition == '3.00未満':
