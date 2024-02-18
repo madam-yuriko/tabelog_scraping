@@ -244,7 +244,10 @@ class MouseApp(tk.Frame):
             else:
                 df_temp = df_temp[df_temp.点数 >= float(score_condition[:4])]
 
-        self.df_small = df_temp.copy()
+        if tdfkn == self.cmb_tdfkn.get():
+            self.df_small = df_temp.copy()
+        
+        print('-----df_small-----', tdfkn, len(self.df_small), name, self.cmb_tdfkn.get())
         self.reload()
 
     def on_check_changed(self):
