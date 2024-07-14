@@ -1,6 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-import pandas as pd
+import polars as pl
 import webbrowser
 import const
 import function as func
@@ -15,7 +15,8 @@ class MouseApp(tk.Frame):
     # 初期化
     def __init__(self, master=None):
         self.link = ''
-        self.df_small = None
+        self.df_all = None
+        self.df_filter = None
 
         # ★バグ対応用の関数を追加
         def fixed_map(option):
@@ -24,8 +25,6 @@ class MouseApp(tk.Frame):
 
 
         tk.Frame.__init__(self, master, width=720, height=1080)
-
-        start_time = time.time()
 
         # タイトルの表示
         self.master.title('食べログ')
@@ -37,110 +36,122 @@ class MouseApp(tk.Frame):
                         background='#0000aa')
 
         # データフレーム取得
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_columns', None)
-        print('----------------Pickle読み込み----------------')
-        df_all = pd.read_pickle(const.INPUT_FILE_NAME)
-        self.df_small = df_all
-        print('----------------Pickle読み込み完了----------------')
+        pl.Config.set_tbl_rows(-1)  # すべての行を表示
+        pl.Config.set_tbl_cols(10)  # すべての列を表示
+        
+        print('----------------CSV読み込み----------------')
+        st = time.time()
+        self.df_all = pl.read_csv(const.INPUT_FILE_NAME, dtypes={
+            '点数_str': pl.Utf8,
+            '点数(増減)_str': pl.Utf8,
+            '点数(増減2)_str': pl.Utf8,
+            '口コミ数(増減)_str': pl.Utf8,
+            '口コミ数(増減2)_str': pl.Utf8,
+        })
+        self.df_filter = self.df_all
+        
+        print('-------self.df_all.shape------', self.df_all.shape)
+        print('-------self.df_all.columns------', self.df_all.columns)
+        
+        print('----------------CSV読み込み完了----------------', f'{round(time.time() - st, 3)} sec')
 
         # ジャンル抽出
-        const.GENRE_LIST = sorted(list(set(list(df_all['ジャンル1']) + list(df_all['ジャンル2']) + list(df_all['ジャンル3']))))
+        const.GENRE_LIST = sorted([d for d in list(set(list(self.df_all['ジャンル1']) + list(self.df_all['ジャンル2']) + list(self.df_all['ジャンル3']))) if d])
 
         # 地域
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'area'))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('area'))
         self.lbl_area = tk.Label(self, text='地方')
         self.cmb_area = ttk.Combobox(self, width=20, height=50, textvariable=sv, values=list(const.AREA_DICT.keys()))
 
         # 都道府県
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'tdfkn'))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('tdfkn'))
         self.lbl_tdfkn = tk.Label(self, text='都道府県')
         self.cmb_tdfkn = ttk.Combobox(self, width=10, height=50, textvariable=sv, values=const.TODOFUKEN_LIST)
 
         # 点数
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'score'))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('score'))
         self.lbl_score_condition = tk.Label(self, text='点数')
         self.cmb_score_condition = ttk.Combobox(self, width=10, height=50, textvariable=sv, values=const.SCORE_LIST)
 
         # 店名
         self.lbl_shop_name = tk.Label(self, text='店名')
         self.txt_shop_name = tk.Entry(self, width=20)
-        self.txt_shop_name.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.txt_shop_name.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
 
         # ジャンル
         self.lbl_genre = tk.Label(self, text='ジャンル')
         self.cmb_genre = ttk.Combobox(self, width=20, height=40, values=const.GENRE_LIST)
-        self.cmb_genre.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.cmb_genre.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
 
         # ジャンル1のみ
         self.bv1 = tk.BooleanVar()
-        self.bv1.trace("w", lambda name, index, mode, bv=self.bv1, df=df_all: self.on_enter())
+        self.bv1.trace("w", lambda name, index, mode, bv=self.bv1, df=self.df_all: self.on_enter())
         self.chk_only_genre1 = tk.Checkbutton(self, variable=self.bv1, text='ジャンル1のみ')
 
         # 予算(夜)
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('yosan_night_l'))
         self.lbl_yosan_night_l = tk.Label(self, text='予算(夜) 下限')
         self.cmb_yosan_night_l = ttk.Combobox(self, width=10, textvariable=sv, height=30, values=const.YOSAN_LIST_L)
         
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('yosan_night_h'))
         self.lbl_yosan_night_h = tk.Label(self, text='上限')
         self.cmb_yosan_night_h = ttk.Combobox(self, width=10, textvariable=sv, height=30, values=const.YOSAN_LIST_H)
 
         # 所在地、施設名、最寄り駅
         self.lbl_place_1 = tk.Label(self, text='場所1')
         self.txt_place_1 = tk.Entry(self, width=20)
-        self.txt_place_1.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.txt_place_1.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
         self.lbl_place_2 = tk.Label(self, text='場所2')
         self.txt_place_2 = tk.Entry(self, width=20)
-        self.txt_place_2.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.txt_place_2.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
         self.lbl_place_3 = tk.Label(self, text='場所3')
         self.txt_place_3 = tk.Entry(self, width=20)
-        self.txt_place_3.bind('<Return>', lambda event, df=df_all: self.on_enter())
+        self.txt_place_3.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
 
         # 営業状況
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('buisiness_status '))
         self.lbl_buisiness_status = tk.Label(self, text='営業状況')
         self.cmb_buisiness_status = ttk.Combobox(self, width=14, textvariable=sv, height=30, values=const.BUSINESS_STATUS_LIST)
 
         # ソート種別
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('sort_type'))
         self.lbl_sort_type = tk.Label(self, text='ソート種別')
         self.cmb_sort_type = ttk.Combobox(self, width=12, textvariable=sv, height=30, values=const.SORT_TYPE_LIST)
 
         # 食べログアワード
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('award '))
         self.lbl_award = tk.Label(self, text='食べログアワード')
         self.cmb_award = ttk.Combobox(self, width=12, textvariable=sv, height=20, values=const.AWARD_LIST)
 
         # 百名店
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_select_changed())
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('meiten'))
         self.lbl_meiten = tk.Label(self, text='百名店')
         self.cmb_meiten = ttk.Combobox(self, width=12, textvariable=sv, height=30, values=const.MEITEN_LIST)
 
         # 商業施設
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'shisetsu'))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('shisetsu'))
         self.lbl_shisetsu = tk.Label(self, text='商業施設')
         self.cmb_shisetsu = ttk.Combobox(self, width=32, textvariable=sv, height=30, values=list(const.SHISETSU_DICT.keys()))
         
         # テーマ別
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df_all, 'theme'))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('theme'))
         self.lbl_theme = tk.Label(self, text='テーマ別')
         self.cmb_theme = ttk.Combobox(self, width=16, textvariable=sv, height=30, values=list(const.THEME_DICT.keys()))
 
         # その他条件
         sv = tk.StringVar()
-        sv.trace("w", lambda name, index, mode, sv=sv, df=df_all: self.on_text_changed(df))
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('pecial'))
         self.lbl_special = tk.Label(self, text='その他')
         self.cmb_special = ttk.Combobox(self, width=16, height=30, textvariable=sv, values=const.SPECIAL_LIST)
 
@@ -167,6 +178,13 @@ class MouseApp(tk.Frame):
         style.configure("Treeview", font=("Arial", 11, 'bold'), rowheight=28)
 
         self.reload()
+        
+    def on_mousewheel(self, event):
+        # リストのスクロール速度
+        if event.num == 4 or event.delta > 0:
+            self.tree.yview_scroll(-9, "units")
+        elif event.num == 5 or event.delta < 0:
+            self.tree.yview_scroll(9, "units") 
 
     def make_tree(self):
         self.tree = ttk.Treeview(self)
@@ -181,26 +199,36 @@ class MouseApp(tk.Frame):
         [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
         self.tree.bind("<Double-1>", self.hyper_link)
         self.tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_select(event))
+        self.tree.bind('<MouseWheel>', self.on_mousewheel)
 
     def hyper_link(self, event):
         webbrowser.open(self.link)
-
+            
     def on_tree_select(self, event):
-        if len(self.tree.selection()) != 0:
+        if self.tree and self.tree.selection():
             select = self.tree.selection()[0]
             no = int(self.tree.set(select)['No']) - 1
-            self.link = self.df_target.iloc[no].URL
+            self.link = self.df_target[no]['URL'][0]
 
-    def on_text_changed(self, df_all, name=''):
+    def on_text_changed(self, name=''):
         print('on_text_changed', name)
-        df_temp = df_all.copy()
-        area = self.cmb_area.get()
-        tdfkn = self.cmb_tdfkn.get()
-        shisetsu = self.cmb_shisetsu.get()
-        theme = self.cmb_theme.get()
-        score_condition = self.cmb_score_condition.get()
+        self.reload()
 
-        if shisetsu and name == 'shisetsu':
+    def on_check_changed(self):
+        print('on_check_changed')
+        self.reload()
+
+    def on_select_changed(self, name=''):
+        print('on_select_changed', name)
+        
+        if name == 'area':
+            self.cmb_tdfkn['values'] = [''] + const.AREA_DICT[self.cmb_area.get()].split('|')
+            self.cmb_tdfkn.set('')
+            
+        if name == 'shisetsu':
+            if self.cmb_shisetsu.get():
+                self.all_reset()
+                
             self.txt_place_1.delete(0, tk.END)
             self.txt_place_2.delete(0, tk.END)
             self.txt_place_3.delete(0, tk.END)
@@ -217,7 +245,10 @@ class MouseApp(tk.Frame):
                     self.txt_place_2.insert(tk.END, v)
                 elif k == '場所3':
                     self.txt_place_3.insert(tk.END, v)
-        elif theme and name == 'theme':
+        elif name == 'theme':
+            if self.cmb_theme.get():
+                self.all_reset()
+                
             theme = const.THEME_DICT[self.cmb_theme.get()]
             for k, v in theme.items():
                 if k == '店名':
@@ -226,39 +257,11 @@ class MouseApp(tk.Frame):
                     genre = self.cmb_genre.get()
                     if genre != v:
                         self.cmb_genre.set(v)
-        else:
-            self.all_reset()
-
-        if area:
-            df_temp = df_temp[df_temp.都道府県.str.contains(const.AREA_DICT[area])]
-            self.cmb_tdfkn['values'] = const.AREA_DICT[area].split('|')
-        else:
-            self.cmb_tdfkn['values'] = const.TODOFUKEN_LIST
-
-        if tdfkn:
-            df_temp = df_temp[df_temp.都道府県 == tdfkn]
-
-        if score_condition:
-            if score_condition == '3.00未満':
-                df_temp = df_temp[df_temp.点数 < 3.00]
-            else:
-                df_temp = df_temp[df_temp.点数 >= float(score_condition[:4])]
-
-        if tdfkn == self.cmb_tdfkn.get():
-            self.df_small = df_temp.copy()
         
-        print('-----df_small-----', tdfkn, len(self.df_small), name, self.cmb_tdfkn.get())
-        self.reload()
-
-    def on_check_changed(self):
-        print('on_check_changed')
-        self.reload()
-
-    def on_select_changed(self):
-        print('on_select_changed')
         if self.start_flg:
             self.start_flg = False
             return
+        
         self.reload()
 
     def on_enter(self):
@@ -266,7 +269,7 @@ class MouseApp(tk.Frame):
         self.reload()
 
     def all_reset(self):
-        print('all_reset()')
+        print('all_reset')
         self.txt_shop_name.delete(0, tk.END)
         self.cmb_genre.set('')
         self.cmb_yosan_night_l.set('')
@@ -277,6 +280,11 @@ class MouseApp(tk.Frame):
 
     def reload(self):
         print('reload')
+        if self.df_filter is None:
+            return
+        
+        self.df_filter = self.df_all # polarsではこの操作で新しいDFを作る、編集しても元DFに影響を与えない
+        
         area = self.cmb_area.get()
         tdfkn = self.cmb_tdfkn.get()
         score_condition = self.cmb_score_condition.get()
@@ -298,18 +306,31 @@ class MouseApp(tk.Frame):
         if tdfkn not in const.TODOFUKEN_LIST:
             return
         print(f'{area} {tdfkn} {score_condition} {shop_name} {genre} {only_genre1} {yosan_night_l} {yosan_night_h} {place1} {place2} {place3} {business_status} {sort_type} {award} {meiten} {special}')
-        header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['URL'] + ['順位変動_str'] + ['点数_str'] + ['点数(増減)_str'] + ['口コミ数(増減)_str'] + ['indicator_1'] + ['indicator_2']
+        header_list = list(const.DATA_FLAME_LAYOUT.keys()) + ['indicator_1'] + ['indicator_2']
         header_list.remove('No')
-        self.df_target, df_total = func.processing_data_frame(
-            self.df_small, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
+        self.df_target = func.processing_data_frame(
+            self.df_filter, area, tdfkn, score_condition, shop_name, genre, only_genre1, yosan_night_l, yosan_night_h, 
             place1, place2, place3, business_status, sort_type, award, meiten, special
         )
+        
         if special not in ('県別表示', '県別店舗数'):
-            self.lbl_title['text'] = f'{const.YEAR}年食べログ {"{:,}".format(len(self.df_target))}件 hit 平均点 {"{:.3f}".format(self.df_target[self.df_target["点数"] != "0.00"]["点数"].astype(float).mean())}点 ' \
-                                    f'口コミ数 {"{:,}".format(self.df_target["口コミ数"].astype(int).sum())}件 保存件数 {"{:,}".format(self.df_target["保存件数"].astype(int).sum())}件'
-            func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list], special)
+            if len(self.df_target) != 0:
+                self.lbl_title['text'] = (
+                    f'{const.YEAR}年食べログ {len(self.df_target):,}件 hit '
+                    f'平均点 {self.df_target.filter(pl.col("点数") != 0.00).get_column("点数").cast(pl.Float64).mean():.3f}点 '
+                    f'口コミ数 {self.df_target.get_column("口コミ数").cast(pl.Int64).sum():,}件 '
+                    f'保存件数 {self.df_target.get_column("保存件数").cast(pl.Int64).sum():,}件'
+                )
+            else:
+                self.lbl_title['text'] = (
+                    f'{const.YEAR}年食べログ {len(self.df_target):,}件 hit '
+                    f'口コミ数 {self.df_target.get_column("口コミ数").cast(pl.Int64).sum():,}件 '
+                    f'保存件数 {self.df_target.get_column("保存件数").cast(pl.Int64).sum():,}件'
+                )
+
+            func.insert_tree(self.tree, self.df_target[:MAX_ROW_CNT][header_list], special)
         else:
-            func.insert_tree(self.tree, pd.concat([self.df_target[0:MAX_ROW_CNT], df_total])[header_list], special)
+            func.insert_tree(self.tree, self.df_target[:MAX_ROW_CNT][header_list], special)
 
     def widget(self):
         # ウィジェット配置
