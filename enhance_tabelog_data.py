@@ -96,6 +96,8 @@ df_all = df_all.with_columns([
 
 df_all = df_all.with_columns([
     pl.col('点数').round(2).apply(lambda x: f"{x:.2f}").alias('点数_str'),
+    pl.col('点数(昨年)').round(2).apply(lambda x: f"{x:.2f}").alias('点数(昨年)_str'),
+    pl.col('点数(一昨年)').round(2).apply(lambda x: f"{x:.2f}").alias('点数(一昨年)_str'),
     score_zougen(pl.col('indicator_1'), pl.col('点数(増減)')).alias('点数(増減)_str'),
     kutchikomi_zougen(pl.col('口コミ数(増減)')).alias('口コミ数(増減)_str'),
     score_zougen(pl.col('indicator_2'), pl.col('点数(増減2)')).alias('点数(増減2)_str'),

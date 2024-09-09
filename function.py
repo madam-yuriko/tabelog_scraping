@@ -145,7 +145,6 @@ def processing_data_frame(df, area='', tdfkn='', score_condition='', shop_name='
 
 
 def insert_tree(tree, df_target, special):
-    print('-------df_target.columns------', df_target.columns)
     
     # ツリーを全削除
     for i in tree.get_children():

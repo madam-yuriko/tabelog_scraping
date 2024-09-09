@@ -43,6 +43,8 @@ class MouseApp(tk.Frame):
         st = time.time()
         self.df_all = pl.read_csv(const.INPUT_FILE_NAME, dtypes={
             '点数_str': pl.Utf8,
+            '点数(昨年)_str': pl.Utf8,
+            '点数(一昨年)_str': pl.Utf8,
             '点数(増減)_str': pl.Utf8,
             '点数(増減2)_str': pl.Utf8,
             '口コミ数(増減)_str': pl.Utf8,
@@ -51,8 +53,6 @@ class MouseApp(tk.Frame):
         self.df_filter = self.df_all
         
         print('-------self.df_all.shape------', self.df_all.shape)
-        print('-------self.df_all.columns------', self.df_all.columns)
-        
         print('----------------CSV読み込み完了----------------', f'{round(time.time() - st, 3)} sec')
 
         # ジャンル抽出
@@ -192,8 +192,8 @@ class MouseApp(tk.Frame):
         self.tree["column"] = list(const.DATA_FLAME_LAYOUT.keys())
         self.tree["show"] = "headings"
         [self.tree.heading(k, text=k.replace('_str', '')) for k in const.DATA_FLAME_LAYOUT.keys()]
-        self.tree.heading('点数(増減)_str', text='昨年')
-        self.tree.heading('点数(増減2)_str', text='一昨年')
+        # self.tree.heading('点数(増減)_str', text='昨年')
+        # self.tree.heading('点数(増減2)_str', text='一昨年')
         self.tree.heading('口コミ数(増減)_str', text='昨年')
         self.tree.heading('口コミ数(増減2)_str', text='一昨年')
         [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
