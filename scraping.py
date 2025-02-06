@@ -8,15 +8,16 @@ import concurrent.futures
 import sys
 import os
 import pickle
+from const import YEAR
 
 
 # 途中スタート位置
 def main(args):
     process = int(args.p)
-    year = args.y
+    # year = args.y
 
     # 全ての店舗IDと残店舗IDを取得
-    all_id_count, remaining_id_list = ipfunc.preprocessing(args.y)
+    all_id_count, remaining_id_list = ipfunc.preprocessing(YEAR)
     
     # 各プロセスに分割
     id_list_split = np.array_split(remaining_id_list, process)
@@ -29,7 +30,7 @@ def main(args):
             # マルチプロセス
             futures = []
             for i, p_id in enumerate(range(1, process+1)):
-                futures.append(executor.submit(request, year, str(p_id).zfill(2), id_list_split[i], all_id_count))
+                futures.append(executor.submit(request, YEAR, str(p_id).zfill(2), id_list_split[i], all_id_count))
             for future in futures:
                 future.result()
     except Exception:
@@ -37,7 +38,7 @@ def main(args):
         sys.exit(0)
     finally:
         # ソート
-        ipfunc.sort_csv_file(year)
+        ipfunc.sort_csv_file(YEAR)
         print('end')
 
 
@@ -62,7 +63,7 @@ def request(year, p_id, id_list, all_id_count):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', type=int, required=True) # プロセス数指定
-    parser.add_argument('-y', type=int, required=True) # 入力ファイルの年度指定
+    # parser.add_argument('-y', type=int, required=True) # 入力ファイルの年度指定
     args = parser.parse_args()
 
     main(args)

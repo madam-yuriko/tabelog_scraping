@@ -3,14 +3,19 @@ import time
 import const
 import sys
 import io
+from polars import Config
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-YEAR = 2024
+# すべての列を表示する設定
+Config.set_tbl_cols(-1)
+
+YEAR = 2025
 INPUT_FILE_NAME = f'data_base_all_{YEAR}.csv'
 EXPORT_FILE_NAME_CSV = f'data_base_all_{YEAR}_processed.csv'
 INPUT_L_FILE_NAME = f'data_base_all_{YEAR - 1}.csv'
 INPUT_L2_FILE_NAME = f'data_base_all_{YEAR - 2}.csv'
+INPUT_L3_FILE_NAME = f'data_base_all_{YEAR - 3}.csv'
 
 def rank_hendo(x):
     return pl.when(x > 0).then(pl.format("+{}", x)).otherwise(pl.format("{}", x))
@@ -44,6 +49,11 @@ df_two_years_ago = pl.read_csv(INPUT_L2_FILE_NAME, encoding='utf-8').fill_null('
 df_two_years_ago = df_two_years_ago.select(['ID', '点数', '口コミ数'])
 print(f'--------{YEAR - 2} year read complete-------', f'{time.time() - start_time}sec')
 
+print(f'--------{YEAR - 3} year csv file read start-------')
+df_three_years_ago = pl.read_csv(INPUT_L3_FILE_NAME, encoding='utf-8').fill_null('')
+df_three_years_ago = df_three_years_ago.select(['ID', '点数', '口コミ数'])
+print(f'--------{YEAR - 3} year read complete-------', f'{time.time() - start_time}sec')
+
 df_all = df_all.with_columns([
     pl.col('予算(夜)').cast(pl.Utf8).alias('予算(夜)_str')
 ])
@@ -69,6 +79,14 @@ df_all = df_all.with_columns([
         .otherwise(pl.lit('both')).alias('indicator_2')
 ])
 
+# 3年前のデータとの結合
+df_all = df_all.join(df_three_years_ago, on='ID', how='left', suffix='_3年前')
+df_all = df_all.with_columns([
+    pl.when(pl.col('点数_3年前').is_null()).then(pl.lit('left_only'))
+        .otherwise(pl.lit('both')).alias('indicator_3')
+])
+
+print(df_all.columns) 
 df_all = df_all.rename(dict(zip(df_all.columns, const.MERGE_COL_NAMES)))
 
 df_all = df_all.with_columns([
@@ -76,6 +94,8 @@ df_all = df_all.with_columns([
     (pl.col('口コミ数').fill_null(0).cast(pl.Int64) - pl.col('口コミ数(昨年)').fill_null(0).cast(pl.Int64)).alias('口コミ数(増減)'),
     (pl.col('点数(昨年)').fill_null(0).cast(pl.Float64) - pl.col('点数(一昨年)').fill_null(0).cast(pl.Float64)).alias('点数(増減2)'),
     (pl.col('口コミ数(昨年)').fill_null(0).cast(pl.Int64) - pl.col('口コミ数(一昨年)').fill_null(0).cast(pl.Int64)).alias('口コミ数(増減2)'),
+    (pl.col('点数(一昨年)').fill_null(0).cast(pl.Float64) - pl.col('点数(3年前)').fill_null(0).cast(pl.Float64)).alias('点数(増減3)'),
+    (pl.col('口コミ数(一昨年)').fill_null(0).cast(pl.Int64) - pl.col('口コミ数(3年前)').fill_null(0).cast(pl.Int64)).alias('口コミ数(増減3)'),
     pl.when(pl.col('ステータス').is_in(['閉店', '移転', '休業', '掲載保留']) & pl.col('ステータス(昨年)').eq('')).then(pl.lit('去年閉店')).otherwise(pl.col('ステータス')).alias('ステータス')
 ])
 
@@ -95,14 +115,22 @@ df_all = df_all.with_columns([
 ])
 
 df_all = df_all.with_columns([
-    pl.col('点数').round(2).apply(lambda x: f"{x:.2f}").alias('点数_str'),
-    pl.col('点数(昨年)').round(2).apply(lambda x: f"{x:.2f}").alias('点数(昨年)_str'),
-    pl.col('点数(一昨年)').round(2).apply(lambda x: f"{x:.2f}").alias('点数(一昨年)_str'),
+    # pl.col('点数').round(2).fill_null("-").apply(lambda x: f"{x:.2f}" if isinstance(x, float) else x, return_dtype=pl.Utf8).alias('点数_str'),
+    # pl.col('点数(昨年)').round(2).fill_null("-").apply(lambda x: f"{x:.2f}" if isinstance(x, float) else x, return_dtype=pl.Utf8).alias('点数(昨年)_str'),
+    # pl.col('点数(一昨年)').round(2).fill_null("-").apply(lambda x: f"{x:.2f}" if isinstance(x, float) else x, return_dtype=pl.Utf8).alias('点数(一昨年)_str'),
+    pl.col('点数').fill_null(0.00).round(2).apply(lambda x: f"{x:.2f}").alias('点数_str'),
+    pl.col('点数(昨年)').fill_null(0.00).round(2).apply(lambda x: f"{x:.2f}").alias('点数(昨年)_str'),
+    pl.col('点数(一昨年)').fill_null(0.00).round(2).apply(lambda x: f"{x:.2f}").alias('点数(一昨年)_str'),
+    pl.col('点数(3年前)').fill_null(0.00).round(2).apply(lambda x: f"{x:.2f}").alias('点数(3年前)_str'),
     score_zougen(pl.col('indicator_1'), pl.col('点数(増減)')).alias('点数(増減)_str'),
     kutchikomi_zougen(pl.col('口コミ数(増減)')).alias('口コミ数(増減)_str'),
     score_zougen(pl.col('indicator_2'), pl.col('点数(増減2)')).alias('点数(増減2)_str'),
-    kutchikomi_zougen(pl.col('口コミ数(増減2)')).alias('口コミ数(増減2)_str')
+    kutchikomi_zougen(pl.col('口コミ数(増減2)')).alias('口コミ数(増減2)_str'),
+    score_zougen(pl.col('indicator_3'), pl.col('点数(増減3)')).alias('点数(増減3)_str'),
+    kutchikomi_zougen(pl.col('口コミ数(増減3)')).alias('口コミ数(増減3)_str'),
 ])
+
+print('----------------', df_all.filter(pl.col("店名") == "ビオラルカフェ 有明ガーデン店"))
 
 print('--------Merge DataFrame complete--------', f'{time.time() - start_time}sec')
 

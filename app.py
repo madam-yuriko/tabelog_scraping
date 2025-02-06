@@ -45,10 +45,13 @@ class MouseApp(tk.Frame):
             '点数_str': pl.Utf8,
             '点数(昨年)_str': pl.Utf8,
             '点数(一昨年)_str': pl.Utf8,
+            '点数(3年前)_str': pl.Utf8,
             '点数(増減)_str': pl.Utf8,
             '点数(増減2)_str': pl.Utf8,
+            '点数(増減3)_str': pl.Utf8,
             '口コミ数(増減)_str': pl.Utf8,
             '口コミ数(増減2)_str': pl.Utf8,
+            '口コミ数(増減3)_str': pl.Utf8,
         })
         self.df_filter = self.df_all
         
@@ -196,6 +199,7 @@ class MouseApp(tk.Frame):
         # self.tree.heading('点数(増減2)_str', text='一昨年')
         self.tree.heading('口コミ数(増減)_str', text='昨年')
         self.tree.heading('口コミ数(増減2)_str', text='一昨年')
+        self.tree.heading('口コミ数(増減3)_str', text='3年前')
         [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
         self.tree.bind("<Double-1>", self.hyper_link)
         self.tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_select(event))
