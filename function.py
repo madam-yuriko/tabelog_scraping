@@ -200,9 +200,9 @@ def insert_tree(tree, df_target, special):
         if row[col_1] in ['閉店', '移転', '休業', '掲載保留', '去年閉店']:
             tree.tag_configure(idx, background="#cccccc", foreground="#000000")
         elif row[col_2] == 'left_only':
-            tree.tag_configure(idx, background="#ffb993", foreground="#000000")
+            tree.tag_configure(idx, background="#ffd6be", foreground="#000000")
         elif row[col_3] == 'left_only':
-            tree.tag_configure(idx, background="#f0e68c", foreground="#000000")
+            tree.tag_configure(idx, background="#f8f3b0", foreground="#000000")
         elif row[col_4] == '':
             tree.tag_configure(idx, background="#a0144f", foreground="#ffffff")
         elif idx % 2 == 0:

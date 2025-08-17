@@ -165,9 +165,12 @@ class MouseApp(tk.Frame):
         # スクロールバー
         scroll = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
         scroll.pack(side=tk.RIGHT, fill="y")
-        self.tree.pack()
+        self.tree.pack(fill=tk.Y, expand=False, anchor=tk.W)
         self.tree["yscrollcommand"] = scroll.set
 
+        # フィルタ用フレーム作成（ウィジェット配置前に）
+        self.create_filter_frames()
+        
         # ウィジェット配置
         self.widget()
 
@@ -189,6 +192,137 @@ class MouseApp(tk.Frame):
         elif event.num == 5 or event.delta < 0:
             self.tree.yview_scroll(9, "units") 
 
+    def create_filter_frames(self):
+        # フィルタ用フレーム作成
+        self.filter_frame_1 = tk.Frame(self)
+        self.filter_frame_2 = tk.Frame(self)
+        
+        # フレーム配置
+        self.filter_frame_1.pack(side=tk.TOP, fill=tk.X, padx=5, pady=2)
+        self.filter_frame_2.pack(side=tk.TOP, fill=tk.X, padx=5, pady=2)
+        
+        # フィルタウィジェットを新しいフレームに再作成
+        self.recreate_filter_widgets()
+    
+    def recreate_filter_widgets(self):
+        # 既存のウィジェットを削除
+        widgets_to_destroy = [
+            'lbl_area', 'cmb_area', 'lbl_tdfkn', 'cmb_tdfkn', 'lbl_score_condition', 'cmb_score_condition',
+            'lbl_shop_name', 'txt_shop_name', 'lbl_genre', 'cmb_genre', 'chk_only_genre1',
+            'lbl_yosan_night_l', 'cmb_yosan_night_l', 'lbl_yosan_night_h', 'cmb_yosan_night_h',
+            'lbl_place_1', 'txt_place_1', 'lbl_place_2', 'txt_place_2', 'lbl_place_3', 'txt_place_3',
+            'lbl_buisiness_status', 'cmb_buisiness_status', 'lbl_sort_type', 'cmb_sort_type',
+            'lbl_award', 'cmb_award', 'lbl_meiten', 'cmb_meiten', 'lbl_shisetsu', 'cmb_shisetsu',
+            'lbl_theme', 'cmb_theme', 'lbl_special', 'cmb_special'
+        ]
+        
+        for widget_name in widgets_to_destroy:
+            if hasattr(self, widget_name):
+                getattr(self, widget_name).destroy()
+        
+        # 1段目フィルタウィジェット再作成
+        # 地域
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('area'))
+        self.lbl_area = tk.Label(self.filter_frame_1, text='地方')
+        self.cmb_area = ttk.Combobox(self.filter_frame_1, width=20, height=50, textvariable=sv, values=list(const.AREA_DICT.keys()))
+        
+        # 都道府県
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('tdfkn'))
+        self.lbl_tdfkn = tk.Label(self.filter_frame_1, text='都道府県')
+        self.cmb_tdfkn = ttk.Combobox(self.filter_frame_1, width=10, height=50, textvariable=sv, values=const.TODOFUKEN_LIST)
+        
+        # 点数
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('score'))
+        self.lbl_score_condition = tk.Label(self.filter_frame_1, text='点数')
+        self.cmb_score_condition = ttk.Combobox(self.filter_frame_1, width=10, height=50, textvariable=sv, values=const.SCORE_LIST)
+        
+        # 店名
+        self.lbl_shop_name = tk.Label(self.filter_frame_1, text='店名')
+        self.txt_shop_name = tk.Entry(self.filter_frame_1, width=20)
+        self.txt_shop_name.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
+        
+        # ジャンル
+        self.lbl_genre = tk.Label(self.filter_frame_1, text='ジャンル')
+        self.cmb_genre = ttk.Combobox(self.filter_frame_1, width=20, height=40, values=const.GENRE_LIST)
+        self.cmb_genre.bind('<<ComboboxSelected>>', lambda event, df=self.df_all: self.on_select_changed('genre'))
+        
+        # ジャンル1のみ
+        self.only_genre1_var = tk.BooleanVar()
+        self.chk_only_genre1 = tk.Checkbutton(self.filter_frame_1, variable=self.only_genre1_var, text='ジャンル1のみ', command=lambda df=self.df_all: self.on_select_changed('genre'))
+        
+        # 予算（下限）- 1段目に移動
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('yosan'))
+        self.lbl_yosan_night_l = tk.Label(self.filter_frame_1, text='予算（下限）')
+        self.cmb_yosan_night_l = ttk.Combobox(self.filter_frame_1, width=12, height=30, textvariable=sv, values=const.YOSAN_LIST_L)
+        
+        # 予算（上限）- 1段目に移動
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('yosan'))
+        self.lbl_yosan_night_h = tk.Label(self.filter_frame_1, text='予算（上限）')
+        self.cmb_yosan_night_h = ttk.Combobox(self.filter_frame_1, width=12, height=30, textvariable=sv, values=const.YOSAN_LIST_H)
+        
+        # 2段目フィルタウィジェット再作成  
+        # 場所1
+        self.lbl_place_1 = tk.Label(self.filter_frame_2, text='場所1')
+        self.txt_place_1 = tk.Entry(self.filter_frame_2, width=15)
+        self.txt_place_1.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
+        
+        # 場所2
+        self.lbl_place_2 = tk.Label(self.filter_frame_2, text='場所2')
+        self.txt_place_2 = tk.Entry(self.filter_frame_2, width=15)
+        self.txt_place_2.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
+        
+        # 場所3
+        self.lbl_place_3 = tk.Label(self.filter_frame_2, text='場所3')
+        self.txt_place_3 = tk.Entry(self.filter_frame_2, width=15)
+        self.txt_place_3.bind('<Return>', lambda event, df=self.df_all: self.on_enter())
+        
+        # 営業状況
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('business'))
+        self.lbl_buisiness_status = tk.Label(self.filter_frame_2, text='営業状況')
+        self.cmb_buisiness_status = ttk.Combobox(self.filter_frame_2, width=14, height=20, textvariable=sv, values=const.BUSINESS_STATUS_LIST)
+        
+        # ソート
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('sort'))
+        self.lbl_sort_type = tk.Label(self.filter_frame_2, text='ソート')
+        self.cmb_sort_type = ttk.Combobox(self.filter_frame_2, width=16, height=20, textvariable=sv, values=const.SORT_TYPE_LIST)
+        
+        # アワード
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('award'))
+        self.lbl_award = tk.Label(self.filter_frame_2, text='アワード')
+        self.cmb_award = ttk.Combobox(self.filter_frame_2, width=14, height=30, textvariable=sv, values=const.AWARD_LIST)
+        
+        # 百名店
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('meiten'))
+        self.lbl_meiten = tk.Label(self.filter_frame_2, text='百名店')
+        self.cmb_meiten = ttk.Combobox(self.filter_frame_2, width=14, height=30, textvariable=sv, values=const.MEITEN_LIST)
+        
+        # 商業施設
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('shisetsu'))
+        self.lbl_shisetsu = tk.Label(self.filter_frame_2, text='商業施設')
+        self.cmb_shisetsu = ttk.Combobox(self.filter_frame_2, width=20, height=30, textvariable=sv, values=list(const.SHISETSU_DICT.keys()))
+        
+        # テーマ
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('theme'))
+        self.lbl_theme = tk.Label(self.filter_frame_2, text='テーマ')
+        self.cmb_theme = ttk.Combobox(self.filter_frame_2, width=16, height=30, textvariable=sv, values=list(const.THEME_DICT.keys()))
+        
+        # その他条件
+        sv = tk.StringVar()
+        sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('special'))
+        self.lbl_special = tk.Label(self.filter_frame_2, text='その他')
+        self.cmb_special = ttk.Combobox(self.filter_frame_2, width=16, height=30, textvariable=sv, values=const.SPECIAL_LIST)
+
     def make_tree(self):
         self.tree = ttk.Treeview(self)
         self.tree['height'] = const.VIEW_ROW_CNT
@@ -200,7 +334,7 @@ class MouseApp(tk.Frame):
         self.tree.heading('口コミ数(増減)_str', text='昨年')
         self.tree.heading('口コミ数(増減2)_str', text='一昨年')
         self.tree.heading('口コミ数(増減3)_str', text='3年前')
-        [self.tree.column(k, width=v[0], anchor=v[1]) for k, v in const.DATA_FLAME_LAYOUT.items()]
+        [self.tree.column(k, width=v[0], minwidth=v[0], anchor=v[1], stretch=False) for k, v in const.DATA_FLAME_LAYOUT.items()]
         self.tree.bind("<Double-1>", self.hyper_link)
         self.tree.bind("<<TreeviewSelect>>", lambda event: self.on_tree_select(event))
         self.tree.bind('<MouseWheel>', self.on_mousewheel)
@@ -340,41 +474,45 @@ class MouseApp(tk.Frame):
         # ウィジェット配置
         self.lbl_title.pack(side=tk.TOP, fill=tk.BOTH)
         self.tree.pack(side=tk.BOTTOM, fill=tk.BOTH)
+        
+        # 1段目のフィルタをレイアウト
         self.lbl_area.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
-        self.cmb_area.pack(side=tk.LEFT, after=self.lbl_area, anchor=tk.W, padx=5, pady=5)
-        self.lbl_tdfkn.pack(side=tk.LEFT, after=self.cmb_area, anchor=tk.W, padx=5, pady=5)
-        self.cmb_tdfkn.pack(side=tk.LEFT, after=self.lbl_tdfkn, anchor=tk.W, padx=5, pady=5)
-        self.lbl_score_condition.pack(side=tk.LEFT, after=self.cmb_tdfkn, anchor=tk.W, padx=5, pady=5)
-        self.cmb_score_condition.pack(side=tk.LEFT, after=self.lbl_score_condition, anchor=tk.W, padx=5, pady=5)
-        self.lbl_shop_name.pack(side=tk.LEFT, after=self.cmb_score_condition, anchor=tk.W, padx=5, pady=5)
-        self.txt_shop_name.pack(side=tk.LEFT, after=self.lbl_shop_name, anchor=tk.W, padx=5, pady=5)
-        self.lbl_genre.pack(side=tk.LEFT, after=self.txt_shop_name, anchor=tk.W, padx=5, pady=5)
-        self.cmb_genre.pack(side=tk.LEFT, after=self.lbl_genre, anchor=tk.W, padx=5, pady=5)
-        self.chk_only_genre1.pack(side=tk.LEFT, after=self.cmb_genre, anchor=tk.W, padx=5, pady=5)
-        self.lbl_yosan_night_l.pack(side=tk.LEFT, after=self.chk_only_genre1, anchor=tk.W, padx=5, pady=5)
-        self.cmb_yosan_night_l.pack(side=tk.LEFT, after=self.lbl_yosan_night_l, anchor=tk.W, padx=5, pady=5)
-        self.lbl_yosan_night_h.pack(side=tk.LEFT, after=self.cmb_yosan_night_l, anchor=tk.W, padx=5, pady=5)
-        self.cmb_yosan_night_h.pack(side=tk.LEFT, after=self.lbl_yosan_night_h, anchor=tk.W, padx=5, pady=5)
-        self.lbl_place_1.pack(side=tk.LEFT, after=self.cmb_yosan_night_h, anchor=tk.W, padx=5, pady=5)
-        self.txt_place_1.pack(side=tk.LEFT, after=self.lbl_place_1, anchor=tk.W, padx=5, pady=5)
-        self.lbl_place_2.pack(side=tk.LEFT, after=self.txt_place_1, anchor=tk.W, padx=5, pady=5)
-        self.txt_place_2.pack(side=tk.LEFT, after=self.lbl_place_2, anchor=tk.W, padx=5, pady=5)
-        self.lbl_place_3.pack(side=tk.LEFT, after=self.txt_place_2, anchor=tk.W, padx=5, pady=5)
-        self.txt_place_3.pack(side=tk.LEFT, after=self.lbl_place_3, anchor=tk.W, padx=5, pady=5)
-        self.lbl_buisiness_status.pack(side=tk.LEFT, after=self.txt_place_3, anchor=tk.W, padx=5, pady=5)
-        self.cmb_buisiness_status.pack(side=tk.LEFT, after=self.lbl_buisiness_status, anchor=tk.W, padx=5, pady=5)
-        self.lbl_sort_type.pack(side=tk.LEFT, after=self.cmb_buisiness_status, anchor=tk.W, padx=5, pady=5)
-        self.cmb_sort_type.pack(side=tk.LEFT, after=self.lbl_sort_type, anchor=tk.W, padx=5, pady=5)
-        self.lbl_award.pack(side=tk.LEFT, after=self.cmb_sort_type, anchor=tk.W, padx=5, pady=5)
-        self.cmb_award.pack(side=tk.LEFT, after=self.lbl_award, anchor=tk.W, padx=5, pady=5)
-        self.lbl_meiten.pack(side=tk.LEFT, after=self.cmb_award, anchor=tk.W, padx=5, pady=5)
-        self.cmb_meiten.pack(side=tk.LEFT, after=self.lbl_meiten, anchor=tk.W, padx=5, pady=5)
-        self.lbl_shisetsu.pack(side=tk.LEFT, after=self.cmb_meiten, anchor=tk.W, padx=5, pady=5)
-        self.cmb_shisetsu.pack(side=tk.LEFT, after=self.lbl_shisetsu, anchor=tk.W, padx=5, pady=5)
-        self.lbl_theme.pack(side=tk.LEFT, after=self.cmb_shisetsu, anchor=tk.W, padx=5, pady=5)
-        self.cmb_theme.pack(side=tk.LEFT, after=self.lbl_theme, anchor=tk.W, padx=5, pady=5)
-        self.lbl_special.pack(side=tk.LEFT, after=self.cmb_theme, anchor=tk.W, padx=5, pady=5)
-        self.cmb_special.pack(side=tk.LEFT, after=self.lbl_special, anchor=tk.W, padx=5, pady=5)
+        self.cmb_area.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_tdfkn.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_tdfkn.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_score_condition.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_score_condition.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_shop_name.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.txt_shop_name.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_genre.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_genre.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.chk_only_genre1.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_yosan_night_l.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_yosan_night_l.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_yosan_night_h.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_yosan_night_h.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        
+        # 2段目のフィルタをレイアウト
+        self.lbl_place_1.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.txt_place_1.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_place_2.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.txt_place_2.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_place_3.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.txt_place_3.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_buisiness_status.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_buisiness_status.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_sort_type.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_sort_type.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_award.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_award.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_meiten.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_meiten.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_shisetsu.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_shisetsu.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_theme.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_theme.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.lbl_special.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
+        self.cmb_special.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=5)
 
 # アプリの実行
 f = MouseApp()
