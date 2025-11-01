@@ -248,6 +248,7 @@ class MouseApp(tk.Frame):
         self.lbl_genre = tk.Label(self.filter_frame_1, text='ジャンル')
         self.cmb_genre = ttk.Combobox(self.filter_frame_1, width=20, height=40, values=const.GENRE_LIST)
         self.cmb_genre.bind('<<ComboboxSelected>>', lambda event, df=self.df_all: self.on_select_changed('genre'))
+        self.cmb_genre.bind('<Return>', lambda event, df=self.df_all: self.on_select_changed('genre'))
         
         # ジャンル1のみ
         self.only_genre1_var = tk.BooleanVar()
