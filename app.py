@@ -61,7 +61,7 @@ class MouseApp(tk.Frame):
         # ジャンル抽出
         const.GENRE_LIST = sorted([d for d in list(set(list(self.df_all['ジャンル1']) + list(self.df_all['ジャンル2']) + list(self.df_all['ジャンル3']))) if d])
 
-        # 地域
+        # 地方
         sv = tk.StringVar()
         sv.trace("w", lambda name, index, mode, sv=sv, df=self.df_all: self.on_select_changed('area'))
         self.lbl_area = tk.Label(self, text='地方')

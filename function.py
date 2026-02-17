@@ -108,7 +108,8 @@ def processing_data_frame(df, area='', tdfkn='', score_condition='', shop_name='
             result.extend(df.filter(pl.col('都道府県') == prefecture).to_dicts())
             
             # 統計行を追加
-            stats_row = {col: '' for col in df.columns}
+            # Keep numeric columns nullable to avoid mixed-type schema inference errors.
+            stats_row = {col: None for col in df.columns}
             stats_row['店名'] = f"店舗数: {count}"
             stats_row['都道府県'] = prefecture
             result.append(stats_row)
@@ -203,7 +204,7 @@ def insert_tree(tree, df_target, special):
             tree.tag_configure(idx, background="#ffd6be", foreground="#000000")
         elif row[col_3] == 'left_only':
             tree.tag_configure(idx, background="#f8f3b0", foreground="#000000")
-        elif row[col_4] == '':
+        elif row[col_4] in ('', None):
             tree.tag_configure(idx, background="#a0144f", foreground="#ffffff")
         elif idx % 2 == 0:
             tree.tag_configure(idx, background="#ffffff", foreground="#000000")
