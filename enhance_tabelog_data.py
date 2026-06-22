@@ -10,7 +10,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 # すべての列を表示する設定
 Config.set_tbl_cols(-1)
 
-YEAR = 2025
+YEAR = 2026
 INPUT_FILE_NAME = f'data_base_all_{YEAR}.csv'
 EXPORT_FILE_NAME_CSV = f'data_base_all_{YEAR}_processed.csv'
 INPUT_L_FILE_NAME = f'data_base_all_{YEAR - 1}.csv'

@@ -1,13 +1,10 @@
 import argparse
 import requests
-import pandas as pd
 import numpy as np
 import const
 import ipynb_function as ipfunc
 import concurrent.futures
 import sys
-import os
-import pickle
 from const import YEAR
 
 
